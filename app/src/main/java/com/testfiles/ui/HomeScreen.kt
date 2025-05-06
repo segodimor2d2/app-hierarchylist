@@ -13,6 +13,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.testfiles.util.PreferencesUtil
+import loadMdFiles
 import java.net.URLEncoder
 
 @Composable
@@ -25,36 +27,29 @@ fun HomeScreen(navController: NavController, viewModel: SharedViewModel) {
         contract = ActivityResultContracts.OpenDocumentTree(),
         onResult = { uri ->
             uri?.let {
+                PreferencesUtil.saveFolderUri(context, it) // 🔥 salva a URI
                 folderUri = it
                 context.contentResolver.takePersistableUriPermission(
                     it,
                     Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
                 )
-                val childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(
-                    it, DocumentsContract.getTreeDocumentId(it)
-                )
-                val files = mutableListOf<Pair<String, Uri>>()
-                context.contentResolver.query(
-                    childrenUri,
-                    arrayOf(
-                        DocumentsContract.Document.COLUMN_DOCUMENT_ID,
-                        DocumentsContract.Document.COLUMN_DISPLAY_NAME
-                    ),
-                    null, null, null
-                )?.use { cursor ->
-                    while (cursor.moveToNext()) {
-                        val documentId = cursor.getString(0)
-                        val displayName = cursor.getString(1)
-                        if (displayName.endsWith(".md")) {
-                            val fileUri = DocumentsContract.buildDocumentUriUsingTree(it, documentId)
-                            files.add(displayName to fileUri)
-                        }
-                    }
+                loadMdFiles(context, it) { files ->
+                    mdFiles = files
                 }
-                mdFiles = files
             }
         }
     )
+
+    // 🔁 Verifica se já existe URI salva
+    LaunchedEffect(Unit) {
+        val savedUri = PreferencesUtil.getSavedFolderUri(context)
+        savedUri?.let {
+            folderUri = it
+            loadMdFiles(context, it) { files ->
+                mdFiles = files
+            }
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -62,13 +57,11 @@ fun HomeScreen(navController: NavController, viewModel: SharedViewModel) {
             .systemBarsPadding()
             .padding(16.dp)
     ) {
-        Button(onClick = { folderPicker.launch(null) }) {
-            Text("Selecionar Pasta")
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        if (mdFiles.isNotEmpty()) {
+        if (folderUri == null) {
+            Button(onClick = { folderPicker.launch(null) }) {
+                Text("Selecionar Pasta")
+            }
+        } else {
             Text("Arquivos Markdown encontrados:")
             Spacer(modifier = Modifier.height(8.dp))
 
@@ -83,8 +76,6 @@ fun HomeScreen(navController: NavController, viewModel: SharedViewModel) {
                         .padding(8.dp)
                 )
             }
-
         }
     }
 }
-
