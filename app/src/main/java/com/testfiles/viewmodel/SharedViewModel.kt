@@ -1,4 +1,4 @@
-package com.testfiles.ui
+package com.testfiles.viewmodel
 
 import android.net.Uri
 import androidx.lifecycle.ViewModel

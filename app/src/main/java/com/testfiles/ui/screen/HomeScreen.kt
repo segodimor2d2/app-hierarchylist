@@ -1,8 +1,7 @@
-package com.testfiles.ui
+package com.testfiles.ui.screen
 
 import android.content.Intent
 import android.net.Uri
-import android.provider.DocumentsContract
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
@@ -14,8 +13,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.testfiles.util.PreferencesUtil
-import loadMdFiles
-import java.net.URLEncoder
+import com.testfiles.viewmodel.SharedViewModel
+import com.testfiles.util.loadMdFiles
+import androidx.compose.ui.graphics.Color
 
 @Composable
 fun HomeScreen(navController: NavController, viewModel: SharedViewModel) {
@@ -27,7 +27,7 @@ fun HomeScreen(navController: NavController, viewModel: SharedViewModel) {
         contract = ActivityResultContracts.OpenDocumentTree(),
         onResult = { uri ->
             uri?.let {
-                PreferencesUtil.saveFolderUri(context, it) // 🔥 salva a URI
+                PreferencesUtil.saveFolderUri(context, it)
                 folderUri = it
                 context.contentResolver.takePersistableUriPermission(
                     it,
@@ -40,7 +40,6 @@ fun HomeScreen(navController: NavController, viewModel: SharedViewModel) {
         }
     )
 
-    // 🔁 Verifica se já existe URI salva
     LaunchedEffect(Unit) {
         val savedUri = PreferencesUtil.getSavedFolderUri(context)
         savedUri?.let {
@@ -51,30 +50,36 @@ fun HomeScreen(navController: NavController, viewModel: SharedViewModel) {
         }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .systemBarsPadding()
-            .padding(16.dp)
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background
+        //color = Color.Red
     ) {
-        if (folderUri == null) {
-            Button(onClick = { folderPicker.launch(null) }) {
-                Text("Selecionar Pasta")
-            }
-        } else {
-            Text("Arquivos Markdown encontrados:")
-            Spacer(modifier = Modifier.height(8.dp))
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .systemBarsPadding()
+                .padding(16.dp)
+        ) {
+            if (folderUri == null) {
+                Button(onClick = { folderPicker.launch(null) }) {
+                    Text("Selecionar Pasta")
+                }
+            } else {
+                Text("Arquivos Markdown encontrados:")
+                Spacer(modifier = Modifier.height(8.dp))
 
-            mdFiles.forEach { (name, uri) ->
-                Text(
-                    text = name,
-                    modifier = Modifier
-                        .clickable {
-                            viewModel.selectFile(uri)
-                            navController.navigate("edit")
-                        }
-                        .padding(8.dp)
-                )
+                mdFiles.forEach { (name, uri) ->
+                    Text(
+                        text = name,
+                        modifier = Modifier
+                            .clickable {
+                                viewModel.selectFile(uri)
+                                navController.navigate("edit")
+                            }
+                            .padding(8.dp)
+                    )
+                }
             }
         }
     }
