@@ -13,9 +13,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import java.net.URLEncoder
 
 @Composable
-fun HomeScreen(navController: NavController) {
+fun HomeScreen(navController: NavController, viewModel: SharedViewModel) {
     val context = LocalContext.current
     var folderUri by remember { mutableStateOf<Uri?>(null) }
     var mdFiles by remember { mutableStateOf<List<Pair<String, Uri>>>(emptyList()) }
@@ -29,11 +30,9 @@ fun HomeScreen(navController: NavController) {
                     it,
                     Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
                 )
-
                 val childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(
                     it, DocumentsContract.getTreeDocumentId(it)
                 )
-
                 val files = mutableListOf<Pair<String, Uri>>()
                 context.contentResolver.query(
                     childrenUri,
@@ -57,7 +56,12 @@ fun HomeScreen(navController: NavController) {
         }
     )
 
-    Column(modifier = Modifier.padding(16.dp)) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .systemBarsPadding()
+            .padding(16.dp)
+    ) {
         Button(onClick = { folderPicker.launch(null) }) {
             Text("Selecionar Pasta")
         }
@@ -73,11 +77,14 @@ fun HomeScreen(navController: NavController) {
                     text = name,
                     modifier = Modifier
                         .clickable {
-                            navController.navigate("edit?uri=${Uri.encode(uri.toString())}")
+                            viewModel.selectFile(uri)
+                            navController.navigate("edit")
                         }
                         .padding(8.dp)
                 )
             }
+
         }
     }
 }
+

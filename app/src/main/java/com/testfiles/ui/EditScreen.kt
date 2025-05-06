@@ -7,38 +7,84 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
+import java.io.OutputStreamWriter
 
 @Composable
-fun EditScreen(uriString: String) {
+fun EditScreen(navController: NavController, viewModel: SharedViewModel) {
     val context = LocalContext.current
-    var fileContent by remember { mutableStateOf("") }
-    val uri = remember(uriString) { Uri.parse(uriString) }
+    val fileUri by viewModel.selectedFileUri.collectAsState()
 
-    LaunchedEffect(uriString) {
-        context.contentResolver.openInputStream(uri)?.use { input ->
-            fileContent = input.bufferedReader().readText()
+    var fileContent by remember { mutableStateOf("") }
+    var isLoading by remember { mutableStateOf(true) }
+    var message by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(fileUri) {
+        isLoading = true
+        try {
+            fileUri?.let { uri ->
+                context.contentResolver.openInputStream(uri)?.use { input ->
+                    fileContent = input.bufferedReader().readText()
+                } ?: run {
+                    message = "Erro: não foi possível abrir o arquivo."
+                }
+            } ?: run {
+                message = "URI nulo"
+            }
+        } catch (e: Exception) {
+            message = "Exceção: ${e.message}"
         }
+        isLoading = false
     }
 
     Column(modifier = Modifier.padding(16.dp)) {
-        Text("Editando Arquivo:")
-        Spacer(modifier = Modifier.height(8.dp))
-        TextField(
-            value = fileContent,
-            onValueChange = { fileContent = it },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(200.dp)
-        )
+        // Text("URI recebido: ${fileUri ?: "nulo"}")
+        // Spacer(modifier = Modifier.height(8.dp))
+
+        if (isLoading) {
+            CircularProgressIndicator()
+        } else {
+            TextField(
+                value = fileContent,
+                onValueChange = { fileContent = it },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(300.dp),
+                label = { Text("Conteúdo do Arquivo") }
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Button(onClick = {
+                try {
+                    fileUri?.let { uri ->
+                        context.contentResolver.openOutputStream(uri)?.use { output ->
+                            OutputStreamWriter(output).use { writer ->
+                                writer.write(fileContent)
+                                writer.flush()
+                            }
+                            message = "Arquivo salvo com sucesso!"
+                        } ?: run {
+                            message = "Erro: não foi possível abrir o arquivo para escrita."
+                        }
+                    }
+                } catch (e: Exception) {
+                    message = "Erro ao salvar: ${e.message}"
+                }
+            }) {
+                Text("Salvar Alterações")
+            }
+
+            message?.let {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(it, color = MaterialTheme.colorScheme.primary)
+            }
+        }
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Button(onClick = {
-            context.contentResolver.openOutputStream(uri, "wt")?.use { output ->
-                output.write(fileContent.toByteArray())
-            }
-        }) {
-            Text("Salvar Alterações")
+        Button(onClick = { navController.popBackStack() }) {
+            Text("Voltar")
         }
     }
 }
