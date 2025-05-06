@@ -4,13 +4,14 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import com.testfiles.ui.theme.TestfilesTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.*
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.navigation.compose.*
+import androidx.navigation.navArgument
+import com.testfiles.ui.HomeScreen
 import com.testfiles.ui.EditScreen
-
+import com.testfiles.ui.theme.TestfilesTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -18,15 +19,25 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             TestfilesTheme {
-                Surface (
+                Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    EditScreen()
+                    val navController = rememberNavController()
+                    NavHost(navController, startDestination = "home") {
+                        composable("home") {
+                            HomeScreen(navController)
+                        }
+                        composable(
+                            "edit?uri={uri}",
+                            arguments = listOf(navArgument("uri") { defaultValue = "" })
+                        ) { backStackEntry ->
+                            val uriString = backStackEntry.arguments?.getString("uri") ?: ""
+                            EditScreen(uriString)
+                        }
+                    }
                 }
             }
         }
     }
 }
-
-

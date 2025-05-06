@@ -1,4 +1,4 @@
-# App Método de Borda Modificado
+# App Matriz de Condorcet com pesos simplificados
 
 ## Tela 1 Home: 
 1. Botão Procurar Selecionar a pasta de trabalho
@@ -82,6 +82,9 @@ Suponha que você queira hierarquizar 3 itens (A, B, C) com base em preferência
 
 ---
 
+# **Método de Borda Modificado** ou **Matriz de Condorcet com pesos simplificados**.
+
+
 Sim! O método que você está descrevendo, que usa os valores **-1, 0 e 1** para comparação par a par, é conhecido como
 **Método de Borda Modificado** ou **Matriz de Condorcet com pesos simplificados**.
 Ele é uma variação de técnicas de votação ou hierarquização baseadas em comparações binárias ou ternárias.  
@@ -139,4 +142,171 @@ Essas comparações são registradas em uma **matriz de dominância**, e a pontu
 - **Método de Copeland**: Soma vitórias e derrotas nas comparações (similar, mas conta vitórias totais).  
 - **Método Borda Clássico**: Rankeia itens por posição, não só por comparação binária.  
 
+---
 
+
+
+
+Eu gostaria fazer com que existam duas telas, a primeira chamanda Home e a segunda chamada Edit,
+na primeira eu quero ter o botão para selecionar a pasta de trabalho, e imprimir uma lista de arquivos,
+se eu clicar num arquivo, abrirá o arquivo na segunda tela onde vou poder editar o conteúdo e salvar.
+
+Use o seguiente codigo como referencia para fazer as mudanças necessárias:
+
+package com.testfiles
+
+import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
+import com.testfiles.ui.theme.TestfilesTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.Modifier
+import androidx.compose.foundation.layout.fillMaxSize
+import com.testfiles.ui.EditScreen
+
+
+class MainActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
+        setContent {
+            TestfilesTheme {
+                Surface (
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    EditScreen()
+                }
+            }
+        }
+    }
+}
+
+
+
+
+
+package com.testfiles.ui
+
+import android.content.Intent
+import android.net.Uri
+import android.provider.DocumentsContract
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
+
+@Composable
+fun EditScreen(){
+    Box(
+        Modifier
+            .fillMaxSize()
+            .padding(8.dp)
+    ) {
+       FileEditorScreen()
+   }
+}
+
+@Composable
+fun FileEditorScreen() {
+    val context = LocalContext.current
+    var folderUri by remember { mutableStateOf<Uri?>(null) }
+    var mdFiles by remember { mutableStateOf<List<Pair<String, Uri>>>(emptyList()) }
+    var fileContent by remember { mutableStateOf("") }
+    var selectedFileUri by remember { mutableStateOf<Uri?>(null) }
+
+    val folderPicker = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocumentTree(),
+        onResult = { uri ->
+            uri?.let {
+                folderUri = it
+                context.contentResolver.takePersistableUriPermission(
+                    it,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                )
+
+                val childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(
+                    it, DocumentsContract.getTreeDocumentId(it)
+                )
+
+                val files = mutableListOf<Pair<String, Uri>>()
+                context.contentResolver.query(
+                    childrenUri,
+                    arrayOf(
+                        DocumentsContract.Document.COLUMN_DOCUMENT_ID,
+                        DocumentsContract.Document.COLUMN_DISPLAY_NAME
+                    ),
+                    null, null, null
+                )?.use { cursor ->
+                    while (cursor.moveToNext()) {
+                        val documentId = cursor.getString(0)
+                        val displayName = cursor.getString(1)
+                        if (displayName.endsWith(".md")) {
+                            val fileUri = DocumentsContract.buildDocumentUriUsingTree(it, documentId)
+                            files.add(displayName to fileUri)
+                        }
+                    }
+                }
+                mdFiles = files
+            }
+        }
+    )
+
+    Column(modifier = Modifier.padding(16.dp)) {
+        Button(onClick = { folderPicker.launch(null) }) {
+            Text("Selecionar Pasta")
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        if (mdFiles.isNotEmpty()) {
+            Text("Arquivos Markdown encontrados:")
+            Spacer(modifier = Modifier.height(8.dp))
+
+            mdFiles.forEach { (name, uri) ->
+                Text(
+                    text = name,
+                    modifier = Modifier
+                        .clickable {
+                            selectedFileUri = uri
+                            context.contentResolver.openInputStream(uri)?.use { input ->
+                                fileContent = input.bufferedReader().readText()
+                            }
+                        }
+                        .padding(8.dp)
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        selectedFileUri?.let {
+            Text("Conteúdo do arquivo:")
+            Spacer(modifier = Modifier.height(8.dp))
+            TextField(
+                value = fileContent,
+                onValueChange = { fileContent = it },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(200.dp)
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Button(onClick = {
+                context.contentResolver.openOutputStream(it, "wt")?.use { output ->
+                    output.write(fileContent.toByteArray())
+                }
+            }) {
+                Text("Salvar Alterações")
+            }
+        }
+    }
+}

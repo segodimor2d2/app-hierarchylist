@@ -12,25 +12,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
 
 @Composable
-fun EditScreen(){
-    Box(
-        Modifier
-            .fillMaxSize()
-            .padding(8.dp)
-    ) {
-       FileEditorScreen()
-   }
-}
-
-@Composable
-fun FileEditorScreen() {
+fun HomeScreen(navController: NavController) {
     val context = LocalContext.current
     var folderUri by remember { mutableStateOf<Uri?>(null) }
     var mdFiles by remember { mutableStateOf<List<Pair<String, Uri>>>(emptyList()) }
-    var fileContent by remember { mutableStateOf("") }
-    var selectedFileUri by remember { mutableStateOf<Uri?>(null) }
 
     val folderPicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocumentTree(),
@@ -85,37 +73,10 @@ fun FileEditorScreen() {
                     text = name,
                     modifier = Modifier
                         .clickable {
-                            selectedFileUri = uri
-                            context.contentResolver.openInputStream(uri)?.use { input ->
-                                fileContent = input.bufferedReader().readText()
-                            }
+                            navController.navigate("edit?uri=${Uri.encode(uri.toString())}")
                         }
                         .padding(8.dp)
                 )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        selectedFileUri?.let {
-            Text("Conteúdo do arquivo:")
-            Spacer(modifier = Modifier.height(8.dp))
-            TextField(
-                value = fileContent,
-                onValueChange = { fileContent = it },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(200.dp)
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Button(onClick = {
-                context.contentResolver.openOutputStream(it, "wt")?.use { output ->
-                    output.write(fileContent.toByteArray())
-                }
-            }) {
-                Text("Salvar Alterações")
             }
         }
     }
