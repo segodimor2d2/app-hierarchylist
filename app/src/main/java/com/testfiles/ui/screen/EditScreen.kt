@@ -2,8 +2,12 @@ package com.testfiles.ui.screen
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -46,9 +50,13 @@ fun EditScreen(navController: NavController, viewModel: SharedViewModel) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                //.background(Color.Red)
                 .systemBarsPadding()
-                .padding(16.dp)            ) {
+                .padding(16.dp)
+        ) {
+            CustomHeaderEdit(navController)
+
+            Spacer(modifier = Modifier.height(8.dp))
+
             if (isLoading) {
                 CircularProgressIndicator()
             } else {
@@ -63,24 +71,46 @@ fun EditScreen(navController: NavController, viewModel: SharedViewModel) {
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                Button(onClick = {
-                    try {
-                        fileUri?.let { uri ->
-                            context.contentResolver.openOutputStream(uri)?.use { output ->
-                                OutputStreamWriter(output).use { writer ->
-                                    writer.write(fileContent)
-                                    writer.flush()
+                // --- BOTÕES --- //
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    // Botão "Salvar Alterações"
+                    Button(
+                        onClick = {
+                            try {
+                                fileUri?.let { uri ->
+                                    context.contentResolver.openOutputStream(uri)?.use { output ->
+                                        OutputStreamWriter(output).use { writer ->
+                                            writer.write(fileContent)
+                                            writer.flush()
+                                        }
+                                        message = "Arquivo salvo com sucesso!"
+                                    } ?: run {
+                                        message = "Erro: não foi possível abrir o arquivo para escrita."
+                                    }
                                 }
-                                message = "Arquivo salvo com sucesso!"
-                            } ?: run {
-                                message = "Erro: não foi possível abrir o arquivo para escrita."
+                            } catch (e: Exception) {
+                                message = "Erro ao salvar: ${e.message}"
                             }
-                        }
-                    } catch (e: Exception) {
-                        message = "Erro ao salvar: ${e.message}"
+                        },
+                        // modifier = Modifier.weight(1f),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Salvar Alterações")
                     }
-                }) {
-                    Text("Salvar Alterações")
+
+                    // Novo botão "Run"
+                    Button(
+                        onClick = {
+                            // Passa o conteúdo para o ViewModel e navega
+                            viewModel.processData(fileContent)
+                            navController.navigate("processScreen")
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text("Process")
+                    }
                 }
 
                 message?.let {
@@ -91,9 +121,24 @@ fun EditScreen(navController: NavController, viewModel: SharedViewModel) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Button(onClick = { navController.popBackStack() }) {
-                Text("Voltar")
-            }
         }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun CustomHeaderEdit(navController: NavController) {
+    Row(
+        modifier = Modifier.padding(vertical = 16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        IconButton(onClick = { navController.popBackStack() }) {
+            Icon(Icons.Default.ArrowBack, contentDescription = "Voltar")
+        }
+        Text(
+            text = "Edit List",
+            style = MaterialTheme.typography.titleLarge,
+            modifier = Modifier.padding(vertical = 16.dp)
+        )
     }
 }

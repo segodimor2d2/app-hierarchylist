@@ -6,16 +6,40 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.testfiles.ui.screen.EditScreen
 import com.testfiles.ui.screen.HomeScreen
+import com.testfiles.ui.screen.HierarchyProcessScreen
 import com.testfiles.viewmodel.SharedViewModel
 
 @Composable
-fun AppNavGraph(navController: NavHostController, viewModel: SharedViewModel) {
-    NavHost(navController = navController, startDestination = "home") {
+fun AppNavGraph(
+    navController: NavHostController,
+    viewModel: SharedViewModel
+) {
+    NavHost(
+        navController = navController,
+        startDestination = "home"  // Mantém a Home como tela inicial
+    ) {
+        // Tela Home (original)
         composable("home") {
-            HomeScreen(navController = navController, viewModel = viewModel)
+            HomeScreen(
+                navController = navController,
+                viewModel = viewModel
+            )
         }
+
+        // Tela de Edição (original)
         composable("edit") {
-            EditScreen(navController = navController, viewModel = viewModel)
+            EditScreen(
+                navController = navController,
+                viewModel = viewModel
+            )
+        }
+
+        // Nova tela de Processamento (adicionada)
+        composable("processScreen") {
+            HierarchyProcessScreen(
+                navController = navController,
+                viewModel = viewModel
+            )
         }
     }
 }

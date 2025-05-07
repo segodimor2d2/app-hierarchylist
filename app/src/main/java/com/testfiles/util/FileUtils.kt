@@ -3,6 +3,9 @@ package com.testfiles.util
 import android.content.Context
 import android.net.Uri
 import android.provider.DocumentsContract
+import java.io.File
+import java.text.SimpleDateFormat
+import java.util.*
 
 fun loadMdFiles(context: Context, folderUri: Uri, onFilesLoaded: (List<Pair<String, Uri>>) -> Unit) {
     val childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(
@@ -29,4 +32,14 @@ fun loadMdFiles(context: Context, folderUri: Uri, onFilesLoaded: (List<Pair<Stri
     }
 
     onFilesLoaded(files)
+}
+
+fun createNewMarkdownFile(context: Context): File {
+    val formatter = SimpleDateFormat("yyMMddHHmmss", Locale.getDefault())
+    val fileName = formatter.format(Date()) + ".md"
+    val dir = File(context.filesDir, "markdown_files")
+    if (!dir.exists()) dir.mkdirs()
+    val file = File(dir, fileName)
+    file.writeText("# Novo Arquivo Markdown\n")
+    return file
 }

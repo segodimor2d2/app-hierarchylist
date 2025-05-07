@@ -2,7 +2,8 @@
 
 ## Tela 1 Home: 
 1. Botão Procurar Selecionar a pasta de trabalho
-    Ver a possibilidade de Salvar a pasta depois da primeira vez
+    - Ver a possibilidade de Salvar a pasta depois da primeira vez
+    - ter um botão para esquecer a pasta e poder usar outra
 2. Imprime lista de arquivos (dentro da pasta)
     - Cada Arquivo poder ter um ícone sé o arquivo/lista foi processada identificada pelo prefix do nome
 3. Se clicar num arquivo, => abre o arquivo na Tela 2
@@ -184,4 +185,11 @@ Se quiser, podemos continuar com melhorias incrementais, como:
 * Criar um `model/` para tipos como `MarkdownFile`.
 * Separar mais logicamente `data/` e `domain/`.
 
-Você gostaria de continuar evoluindo essa estrutura ou está satisfeito por enquanto?
+---
+
+
+
+
+
+
+

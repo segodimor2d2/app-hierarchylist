@@ -6,8 +6,12 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -15,7 +19,9 @@ import androidx.navigation.NavController
 import com.testfiles.util.PreferencesUtil
 import com.testfiles.viewmodel.SharedViewModel
 import com.testfiles.util.loadMdFiles
-import androidx.compose.ui.graphics.Color
+import androidx.documentfile.provider.DocumentFile
+import java.text.SimpleDateFormat
+import java.util.*
 
 @Composable
 fun HomeScreen(navController: NavController, viewModel: SharedViewModel) {
@@ -53,7 +59,6 @@ fun HomeScreen(navController: NavController, viewModel: SharedViewModel) {
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
-        //color = Color.Red
     ) {
         Column(
             modifier = Modifier
@@ -66,7 +71,8 @@ fun HomeScreen(navController: NavController, viewModel: SharedViewModel) {
                     Text("Selecionar Pasta")
                 }
             } else {
-                Text("Arquivos Markdown encontrados:")
+                CustomHeaderHome(navController)
+
                 Spacer(modifier = Modifier.height(8.dp))
 
                 mdFiles.forEach { (name, uri) ->
@@ -80,7 +86,55 @@ fun HomeScreen(navController: NavController, viewModel: SharedViewModel) {
                             .padding(8.dp)
                     )
                 }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Button(
+                    onClick = {
+                        folderUri?.let { folder ->
+                            val formatter = SimpleDateFormat("yyMMddHHmmss", Locale.getDefault())
+                            val fileName = formatter.format(Date()) + ".md"
+
+                            val docFolder = DocumentFile.fromTreeUri(context, folder)
+                            val newFile = docFolder?.createFile("text/markdown", fileName)
+
+                            newFile?.uri?.let { uri ->
+                                context.contentResolver.openOutputStream(uri)?.use { output ->
+                                    output.write("".toByteArray())
+                                }
+
+                                // Atualiza a lista localmente
+                                mdFiles = mdFiles + (fileName to uri)
+
+                                // Define o arquivo selecionado no ViewModel e navega
+                                viewModel.selectFile(uri)
+                                navController.navigate("edit")
+                            }
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text("Novo Arquivo")
+                }
+
             }
         }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun CustomHeaderHome(navController: NavController) {
+    Row(
+        modifier = Modifier.padding(vertical = 16.dp)
+    ) {
+        IconButton({}) {
+            Icon(Icons.Default.Home, contentDescription = "Voltar")
+        }
+        Text(
+            text = "Files of Lists",
+            style = MaterialTheme.typography.titleLarge,
+            modifier = Modifier.padding(vertical = 16.dp)
+        )
     }
 }

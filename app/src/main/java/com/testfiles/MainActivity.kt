@@ -13,12 +13,19 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // Inicializa o ViewModel (mantenha assim)
         val viewModel: SharedViewModel by viewModels()
 
         setContent {
             TestfilesTheme {
+                // 1. NavController deve ser criado dentro do Composition
                 val navController = rememberNavController()
-                AppNavGraph(navController = navController, viewModel = viewModel)
+
+                // 2. Passa as dependências para o grafo de navegação
+                AppNavGraph(
+                    navController = navController,
+                    viewModel = viewModel
+                )
             }
         }
     }
