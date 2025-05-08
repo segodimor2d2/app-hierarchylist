@@ -1,5 +1,7 @@
 package com.testfiles.ui.screen
 
+import android.content.Context
+import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
@@ -25,21 +27,10 @@ fun EditScreen(navController: NavController, viewModel: SharedViewModel) {
     var isLoading by remember { mutableStateOf(true) }
     var message by remember { mutableStateOf<String?>(null) }
 
+    // Carrega o conteúdo inicial do arquivo
     LaunchedEffect(fileUri) {
         isLoading = true
-        try {
-            fileUri?.let { uri ->
-                context.contentResolver.openInputStream(uri)?.use { input ->
-                    fileContent = input.bufferedReader().readText()
-                } ?: run {
-                    message = "Erro: não foi possível abrir o arquivo."
-                }
-            } ?: run {
-                message = "URI nulo"
-            }
-        } catch (e: Exception) {
-            message = "Exceção: ${e.message}"
-        }
+        fileContent = loadFileContent(context, fileUri)
         isLoading = false
     }
 
@@ -60,6 +51,7 @@ fun EditScreen(navController: NavController, viewModel: SharedViewModel) {
             if (isLoading) {
                 CircularProgressIndicator()
             } else {
+                // Campo de edição do arquivo
                 TextField(
                     value = fileContent,
                     onValueChange = { fileContent = it },
@@ -69,59 +61,75 @@ fun EditScreen(navController: NavController, viewModel: SharedViewModel) {
                     label = { Text("Conteúdo do Arquivo") }
                 )
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
-                // --- BOTÕES --- //
+                // Botões de ação
                 Column(
                     modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    // Botão "Salvar Alterações"
+                    // Botão Salvar
                     Button(
                         onClick = {
-                            try {
-                                fileUri?.let { uri ->
-                                    context.contentResolver.openOutputStream(uri)?.use { output ->
-                                        OutputStreamWriter(output).use { writer ->
-                                            writer.write(fileContent)
-                                            writer.flush()
-                                        }
-                                        message = "Arquivo salvo com sucesso!"
-                                    } ?: run {
-                                        message = "Erro: não foi possível abrir o arquivo para escrita."
-                                    }
-                                }
-                            } catch (e: Exception) {
-                                message = "Erro ao salvar: ${e.message}"
-                            }
+                            message = saveFileContent(context, fileUri, fileContent)
                         },
-                        // modifier = Modifier.weight(1f),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text("Salvar Alterações")
                     }
 
-                    // Novo botão "Run"
+                    // Botão Processar
                     Button(
                         onClick = {
-                            // Passa o conteúdo para o ViewModel e navega
                             viewModel.processData(fileContent)
                             navController.navigate("compare")
                         },
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth()
                     ) {
                         Text("Process")
                     }
                 }
 
+                // Exibição de mensagens
                 message?.let {
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text(it, color = MaterialTheme.colorScheme.primary)
+                    Text(
+                        text = it,
+                        color = if (it.startsWith("Erro")) MaterialTheme.colorScheme.error
+                        else MaterialTheme.colorScheme.primary
+                    )
                 }
             }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
         }
+    }
+}
+
+// Função auxiliar para carregar conteúdo do arquivo
+private fun loadFileContent(context: Context, fileUri: Uri?): String {
+    return try {
+        fileUri?.let { uri ->
+            context.contentResolver.openInputStream(uri)?.use { input ->
+                input.bufferedReader().readText()
+            } ?: throw Exception("Não foi possível abrir o arquivo.")
+        } ?: throw Exception("URI nulo")
+    } catch (e: Exception) {
+        "Erro: ${e.message}"
+    }
+}
+
+// Função auxiliar para salvar conteúdo no arquivo
+private fun saveFileContent(context: Context, fileUri: Uri?, content: String): String {
+    return try {
+        fileUri?.let { uri ->
+            context.contentResolver.openOutputStream(uri, "wt")?.use { output ->
+                OutputStreamWriter(output).use { writer ->
+                    writer.write(content)
+                    "Arquivo salvo com sucesso!"
+                }
+            } ?: "Erro: Não foi possível abrir o arquivo para escrita."
+        } ?: "Erro: URI nulo"
+    } catch (e: Exception) {
+        "Erro ao salvar: ${e.message}"
     }
 }
 

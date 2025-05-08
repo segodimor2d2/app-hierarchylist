@@ -1,48 +1,33 @@
 package com.testfiles.ui.screen
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.testfiles.viewmodel.SharedViewModel
-import java.io.OutputStreamWriter
-
 
 @Composable
 fun RankingScreen(navController: NavController, viewModel: SharedViewModel) {
     val context = LocalContext.current
     val fileUri by viewModel.selectedFileUri.collectAsState()
     val ranking by viewModel.ranking.collectAsState()
+    val message by viewModel.message.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
 
-    var fileContent by remember { mutableStateOf("") }
-    var isLoading by remember { mutableStateOf(true) }
-    var message by remember { mutableStateOf<String?>(null) }
-
-    LaunchedEffect(fileUri) {
-        isLoading = true
-        try {
+    LaunchedEffect(fileUri, ranking) {
+        if (ranking.isNotEmpty()) {
             fileUri?.let { uri ->
-                context.contentResolver.openInputStream(uri)?.use { input ->
-                    fileContent = input.bufferedReader().readText()
-                } ?: run {
-                    message = "Erro: não foi possível abrir o arquivo."
-                }
-            } ?: run {
-                message = "URI nulo"
+                viewModel.saveRankingToFile(context, uri, ranking)
             }
-        } catch (e: Exception) {
-            message = "Exceção: ${e.message}"
         }
-        isLoading = false
     }
 
     Surface(
@@ -55,17 +40,67 @@ fun RankingScreen(navController: NavController, viewModel: SharedViewModel) {
                 .systemBarsPadding()
                 .padding(16.dp)
         ) {
+            // Header
             CustomHeaderRanking(navController)
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            ranking.forEachIndexed { index, (item, score) ->
-                Text(text = "${index + 1}. $item - Pontos: $score")
+            // Loading indicator
+            if (isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier
+                        .align(Alignment.CenterHorizontally)
+                        .padding(16.dp)
+                )
             }
 
+            // Message display
+            message?.let { msg ->
+                Text(
+                    text = msg,
+                    color = if (msg.startsWith("Erro")) MaterialTheme.colorScheme.error
+                    else MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+            }
+
+            // Ranking content
+            Card(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp)
+                ) {
+                    Text(
+                        text = "# hierarchylist",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+
+                    if (ranking.isEmpty()) {
+                        Text(
+                            text = "Nenhum resultado disponível",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    } else {
+                        LazyColumn {
+                            itemsIndexed(ranking) { index, (item, score) ->
+                                Text(
+                                    text = "${index + 1}. $item (${score}pts)",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    modifier = Modifier.padding(vertical = 8.dp)
+                                )
+                                Divider()
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
