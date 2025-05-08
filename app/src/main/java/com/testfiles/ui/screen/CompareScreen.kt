@@ -12,7 +12,7 @@ import androidx.navigation.NavController
 import com.testfiles.viewmodel.SharedViewModel
 
 @Composable
-fun HierarchyProcessScreen(
+fun CompareScreen(
     navController: NavController,
     viewModel: SharedViewModel
 ) {
