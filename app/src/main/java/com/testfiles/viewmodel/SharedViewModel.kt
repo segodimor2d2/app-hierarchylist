@@ -1,6 +1,9 @@
 package com.testfiles.viewmodel
 
 import android.net.Uri
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.*
@@ -51,6 +54,14 @@ class SharedViewModel : ViewModel() {
     private val _ranking = MutableStateFlow<List<Pair<String, Int>>>(emptyList())
     val ranking: StateFlow<List<Pair<String, Int>>> = _ranking.asStateFlow()
 
+    // ✅ Lista ordenada para a tela de ranking
+    var rankedItems by mutableStateOf<List<String>>(emptyList())
+        private set
+
+
+    // ✅ Respostas do usuário durante as comparações
+    private val userResponses = mutableListOf<Int?>()
+
     fun selectFile(uri: Uri) {
         _selectedFileUri.value = uri
     }
@@ -61,31 +72,59 @@ class SharedViewModel : ViewModel() {
         }
     }
 
+    // ✅ Adiciona uma resposta do usuário
+    fun addResponse(response: Int?) {
+        userResponses.add(response)
+    }
+
+    // ✅ Calcula o ranking final
+    fun finishComparing() {
+        calcularRankingCondorcet(userResponses)
+        rankedItems = _ranking.value
+            .sortedByDescending { it.second }
+            .map { it.first }
+    }
+
     // ✅ Lógica de ranking baseada nas respostas do usuário
-    fun calcularRankingCondorcet(respostas: List<Int?>) {
+    private fun calcularRankingCondorcet(respostas: List<Int?>) {
         val placar = mutableMapOf<String, Int>()
         val pares = itemPairs.value
 
+        // Inicializa o placar com todos os itens
+        itemList.value.forEach { item ->
+            placar[item] = 0
+        }
+
         for ((index, resposta) in respostas.withIndex()) {
+            if (index >= pares.size) break
+
             val (a, b) = pares[index]
             when (resposta) {
                 -1 -> { // A vence
                     placar[a] = (placar[a] ?: 0) + 1
-                    placar[b] = placar[b] ?: 0
                 }
                 0 -> { // Empate
                     placar[a] = (placar[a] ?: 0) + 1
                     placar[b] = (placar[b] ?: 0) + 1
                 }
                 1 -> { // B vence
-                    placar[a] = placar[a] ?: 0
                     placar[b] = (placar[b] ?: 0) + 1
+                }
+                null -> { // Não contabiliza
+                    continue
                 }
             }
         }
 
         _ranking.value = placar.entries
             .sortedByDescending { it.value }
-            .map { it.toPair() }
+            .map { it.key to it.value }
+    }
+
+    // ✅ Limpa os dados para uma nova comparação
+    fun resetComparison() {
+        userResponses.clear()
+        _ranking.value = emptyList()
+        rankedItems = emptyList()
     }
 }

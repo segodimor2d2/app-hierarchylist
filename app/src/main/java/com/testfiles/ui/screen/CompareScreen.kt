@@ -122,19 +122,16 @@ fun CompareScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
+                // CompareScreen.kt
                 Button(
                     onClick = {
-                        println("Respostas: $respostas")
-                        // Calcula o ranking Condorcet
-                        viewModel.calcularRankingCondorcet(respostas)
-                        analyzing = false
-                        currentIndex = 0
-                    },
-                    enabled = respostas.none { it == null },
-                    modifier = Modifier.fillMaxWidth()
+                        viewModel.finishComparing()
+                        navController.navigate("ranking")
+                    }
                 ) {
-                    Text("Finalizar Comparações")
+                    Text("Finalizar")
                 }
+
             } else {
                 Text(
                     text = "Nenhum par disponível para comparar.",

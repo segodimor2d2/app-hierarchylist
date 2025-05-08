@@ -105,7 +105,7 @@ fun EditScreen(navController: NavController, viewModel: SharedViewModel) {
                         onClick = {
                             // Passa o conteúdo para o ViewModel e navega
                             viewModel.processData(fileContent)
-                            navController.navigate("processScreen")
+                            navController.navigate("compare")
                         },
                         modifier = Modifier.fillMaxWidth(),
                     ) {

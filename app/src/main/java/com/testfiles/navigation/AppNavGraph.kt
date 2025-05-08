@@ -8,6 +8,7 @@ import com.testfiles.ui.screen.EditScreen
 import com.testfiles.ui.screen.HomeScreen
 import com.testfiles.ui.screen.CompareScreen
 import com.testfiles.viewmodel.SharedViewModel
+import com.testfiles.ui.screen.RankingScreen
 
 @Composable
 fun AppNavGraph(
@@ -37,6 +38,14 @@ fun AppNavGraph(
         // Nova tela de Processamento (adicionada)
         composable("compare") {
             CompareScreen(
+                navController = navController,
+                viewModel = viewModel
+            )
+        }
+
+        // AppNavGraph.kt
+        composable("ranking") {
+            RankingScreen(
                 navController = navController,
                 viewModel = viewModel
             )
