@@ -9,8 +9,11 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
-// ✅ Representa um par de itens a ser comparado
+// Representa um par de itens a ser comparado
 data class ItemPair(val first: String, val second: String)
+
+// Nova classe para representar os itens do ranking com sua pontuação
+data class RankedItem(val name: String, val score: Int)
 
 class SharedViewModel : ViewModel() {
     private val _selectedFileUri = MutableStateFlow<Uri?>(null)
@@ -19,7 +22,7 @@ class SharedViewModel : ViewModel() {
     private val _processedData = MutableStateFlow<String?>(null)
     val processedData: StateFlow<String?> = _processedData.asStateFlow()
 
-    // ✅ Lista de itens extraídos de processedData
+    // Lista de itens extraídos de processedData
     val itemList: StateFlow<List<String>> = processedData
         .map { data ->
             data?.split("\n")
@@ -33,7 +36,7 @@ class SharedViewModel : ViewModel() {
             initialValue = emptyList()
         )
 
-    // ✅ Geração dos pares únicos de comparação
+    // Geração dos pares únicos de comparação
     val itemPairs: StateFlow<List<ItemPair>> = itemList
         .map { items ->
             val pairs = mutableListOf<ItemPair>()
@@ -50,16 +53,15 @@ class SharedViewModel : ViewModel() {
             initialValue = emptyList()
         )
 
-    // ✅ Estado do ranking Condorcet (resultado final)
+    // Estado do ranking Condorcet (resultado final)
     private val _ranking = MutableStateFlow<List<Pair<String, Int>>>(emptyList())
     val ranking: StateFlow<List<Pair<String, Int>>> = _ranking.asStateFlow()
 
-    // ✅ Lista ordenada para a tela de ranking
-    var rankedItems by mutableStateOf<List<String>>(emptyList())
+    // Lista ordenada para a tela de ranking (agora com pontuação)
+    var rankedItems by mutableStateOf<List<RankedItem>>(emptyList())
         private set
 
-
-    // ✅ Respostas do usuário durante as comparações
+    // Respostas do usuário durante as comparações
     private val userResponses = mutableListOf<Int?>()
 
     fun selectFile(uri: Uri) {
@@ -72,20 +74,20 @@ class SharedViewModel : ViewModel() {
         }
     }
 
-    // ✅ Adiciona uma resposta do usuário
+    // Adiciona uma resposta do usuário
     fun addResponse(response: Int?) {
         userResponses.add(response)
     }
 
-    // ✅ Calcula o ranking final
+    // Calcula o ranking final
     fun finishComparing() {
         calcularRankingCondorcet(userResponses)
         rankedItems = _ranking.value
             .sortedByDescending { it.second }
-            .map { it.first }
+            .map { RankedItem(it.first, it.second) } // Convertendo para RankedItem
     }
 
-    // ✅ Lógica de ranking baseada nas respostas do usuário
+    // Lógica de ranking baseada nas respostas do usuário
     private fun calcularRankingCondorcet(respostas: List<Int?>) {
         val placar = mutableMapOf<String, Int>()
         val pares = itemPairs.value
@@ -121,7 +123,7 @@ class SharedViewModel : ViewModel() {
             .map { it.key to it.value }
     }
 
-    // ✅ Limpa os dados para uma nova comparação
+    // Limpa os dados para uma nova comparação
     fun resetComparison() {
         userResponses.clear()
         _ranking.value = emptyList()
