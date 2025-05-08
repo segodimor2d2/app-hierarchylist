@@ -7,6 +7,7 @@ import androidx.navigation.compose.composable
 import com.testfiles.ui.screen.EditScreen
 import com.testfiles.ui.screen.HomeScreen
 import com.testfiles.ui.screen.CompareScreen
+import com.testfiles.ui.screen.RankingScreen
 import com.testfiles.viewmodel.SharedViewModel
 
 @Composable
@@ -34,9 +35,17 @@ fun AppNavGraph(
             )
         }
 
-        // Nova tela de Processamento (adicionada)
+        // Nova tela de Comparation
         composable("compare") {
             CompareScreen(
+                navController = navController,
+                viewModel = viewModel
+            )
+        }
+
+        // Nova tela de Ranking
+        composable("ranking") {
+            RankingScreen(
                 navController = navController,
                 viewModel = viewModel
             )

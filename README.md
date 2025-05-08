@@ -1,5 +1,7 @@
 # App Matriz de Condorcet com pesos simplificados
 
+https://github.com/segodimor2d2/app-hierarchylist
+
 ## Tela 1 Home: 
 1. Botão Procurar Selecionar a pasta de trabalho
     - Ver a possibilidade de Salvar a pasta depois da primeira vez
@@ -30,7 +32,7 @@ para comparar estou pensando em:
      ItemA | ItemB
 
 2. comparação de itens com 3 botões:
-    `[A-B] [A=B] [A+B]`
+    `[A>B] [A=B] [A<B]`
 
     - -1(A mais importante que B),
     -  0(A e B são iguais),
@@ -44,14 +46,13 @@ para comparar estou pensando em:
     salva a lista ordenada com prefix identificando no nome do arquivo
 
 5. Text Feedback da opção selecionada
-    `[ - ] ó [A-B] ó [A=B] ó [A+B]`
+    `[ - ] ó [A>B] ó [A=B] ó [A<B]`
 
 
-Qual recurso do android com jetpack poderia me ajudar a fazer isso?
-que opões eu posso usar?
-Te alguma sugestão de como fazer isso?
 
-## Tela 4 Hierchy:
+
+
+## Tela 4 Ranking:
 1. mostra uma lista com os itens ordenados
 2. Possibilidade de mudar a ordem dos itens
 3. Botão Salvar Nova ordem
@@ -336,9 +337,114 @@ como eu poderia fazer isso?
 
 ---
 
+Profavor analise o seguinte repositório no github:
+Eu subi de novo as atualisações no repositorio, Profavor analise o repositório no github:
+https://github.com/segodimor2d2/app-hierarchylist
+
+Eu ainda não estou consegindo ver os pontos no RankingScreen
+
+
+eu fiz umas mudanças mas o programa quebrou ao precionar o botão Preocess na EditScreen, e indo para a tela CompareScreen
+aqui mais dados sobre as mudanças que fiz:
 
 
 
+➜  05hierarchylist git:(main) ✗ gs 
+On branch main
+Your branch is up to date with 'origin/main'.
+
+Changes to be committed:
+  (use "git restore --staged <file>..." to unstage)
+        renamed:    app/src/main/java/com/testfiles/ui/screen/HierchyProcess.kt -> app/src/main/java/com/testfiles/ui/screen/CompareSc
+reen.kt
+
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+        modified:   README.md
+        modified:   app/src/main/java/com/testfiles/navigation/AppNavGraph.kt
+        modified:   app/src/main/java/com/testfiles/ui/screen/CompareScreen.kt
+
+➜  05hierarchylist git:(main) ✗ git diff .                                                 
+diff --git a/README.md b/README.md
+index fbf4d9c..a2fa42f 100644
+--- a/README.md
++++ b/README.md
+@@ -51,7 +51,7 @@ Qual recurso do android com jetpack poderia me ajudar a fazer isso?
+ que opões eu posso usar?
+ Te alguma sugestão de como fazer isso?
+ 
+-## Tela 4 Hierchy:
++## Tela 4 Ranking:
+ 1. mostra uma lista com os itens ordenados
+ 2. Possibilidade de mudar a ordem dos itens
+ 3. Botão Salvar Nova ordem
+diff --git a/app/src/main/java/com/testfiles/navigation/AppNavGraph.kt b/app/src/main/java/com/testfiles/navigation/AppNavGraph.kt
+
+index 9af1e5b..6c642f7 100644
+--- a/app/src/main/java/com/testfiles/navigation/AppNavGraph.kt
++++ b/app/src/main/java/com/testfiles/navigation/AppNavGraph.kt
+@@ -6,7 +6,7 @@ import androidx.navigation.compose.NavHost
+ import androidx.navigation.compose.composable
+ import com.testfiles.ui.screen.EditScreen
+ import com.testfiles.ui.screen.HomeScreen
+-import com.testfiles.ui.screen.HierarchyProcessScreen
++import com.testfiles.ui.screen.CompareScreen
+ import com.testfiles.viewmodel.SharedViewModel
+ 
+ @Composable
+@@ -35,8 +35,8 @@ fun AppNavGraph(
+         }
+ 
+         // Nova tela de Processamento (adicionada)
+-        composable("processScreen") {
+-            HierarchyProcessScreen(
++        composable("compare") {
++            CompareScreen(
+                 navController = navController,
+                 viewModel = viewModel
+             )
+diff --git a/app/src/main/java/com/testfiles/ui/screen/CompareScreen.kt b/app/src/main/java/com/testfiles/ui/screen/CompareScreen.k
+t
+index c78a447..87aec21 100644
+--- a/app/src/main/java/com/testfiles/ui/screen/CompareScreen.kt
++++ b/app/src/main/java/com/testfiles/ui/screen/CompareScreen.kt
+@@ -12,7 +12,7 @@ import androidx.navigation.NavController
+ import com.testfiles.viewmodel.SharedViewModel
+ 
+ @Composable
+-fun HierarchyProcessScreen(
++fun CompareScreen(
+     navController: NavController,
+     viewModel: SharedViewModel
+ ) {
+@@ -34,7 +34,7 @@ fun HierarchyProcessScreen(
+                 .systemBarsPadding()
+                 .padding(16.dp)
+         ) {
+-            CustomHeaderHiechyProcess(navController)
++            CustomHeaderCompare(navController)
+ 
+             Spacer(modifier = Modifier.height(24.dp))
+ 
+@@ -148,7 +148,7 @@ fun HierarchyProcessScreen(
+ 
+ @OptIn(ExperimentalMaterial3Api::class)
+ @Composable
+-fun CustomHeaderHiechyProcess(navController: NavController) {
++fun CustomHeaderCompare(navController: NavController) {
+     Row(
+         modifier = Modifier.padding(vertical = 16.dp),
+         verticalAlignment = Alignment.CenterVertically
+@@ -157,7 +157,7 @@ fun CustomHeaderHiechyProcess(navController: NavController) {
+             Icon(Icons.Default.ArrowBack, contentDescription = "Voltar")
+         }
+         Text(
+-            text = "Hierchy Proccess",
++            text = "Compare Process",
+             style = MaterialTheme.typography.titleLarge,
+             modifier = Modifier.padding(vertical = 16.dp)
+         )
 
 
 

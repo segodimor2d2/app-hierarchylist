@@ -41,7 +41,7 @@ fun CompareScreen(
             // Exibe o ranking após o cálculo
             if (!analyzing) {
                 Text(
-                    text = "Ranking Condorcet:",
+                    text = "Ranking:",
                     style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.align(Alignment.CenterHorizontally)
                 )
@@ -86,18 +86,18 @@ fun CompareScreen(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
-                    Button(onClick = { respostas[currentIndex] = -1 }) { Text("[A - B]") }
+                    Button(onClick = { respostas[currentIndex] = -1 }) { Text("[A > B]") }
                     Button(onClick = { respostas[currentIndex] = 0 }) { Text("[A = B]") }
-                    Button(onClick = { respostas[currentIndex] = 1 }) { Text("[A + B]") }
+                    Button(onClick = { respostas[currentIndex] = 1 }) { Text("[A < B]") }
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
                     text = when (selected) {
-                        -1 -> "Você escolheu: [A - B]"
+                        -1 -> "Você escolheu: [A > B]"
                         0 -> "Você escolheu: [A = B]"
-                        1 -> "Você escolheu: [A + B]"
+                        1 -> "Você escolheu: [A > B]"
                         else -> "Nenhuma escolha feita."
                     },
                     modifier = Modifier.align(Alignment.CenterHorizontally)
@@ -127,13 +127,14 @@ fun CompareScreen(
                         println("Respostas: $respostas")
                         // Calcula o ranking Condorcet
                         viewModel.calcularRankingCondorcet(respostas)
+                        navController.navigate("ranking")
                         analyzing = false
                         currentIndex = 0
                     },
                     enabled = respostas.none { it == null },
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Finalizar Comparações")
+                    Text("Finalizar")
                 }
             } else {
                 Text(
