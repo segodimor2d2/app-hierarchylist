@@ -19,7 +19,12 @@
 5. Botão para iniciar => Tela 3, inicia processo de hierarquia
 
 
-## Tela 3 HierchyProccess:
+## Tela 3 HierchyProcess:
+a HierchyScreen é uma tela que vai mostrar repetida uma comparação de 2 itens e vai me deixar selecionar qual é a mais importante com 3 botões,
+cada comparação vai os botões e apos de apresentar uma comparação o programa vai salvar a opção selecionada e vai para a próxima comparação,
+eu vou ter mais 2 botões de seguinte e anterior para navegar entre as comparações.
+
+para comparar estou pensando em:
 1. Mostra duas colunas
     ColumA | ColumB
      ItemA | ItemB
@@ -40,6 +45,11 @@
 
 5. Text Feedback da opção selecionada
     `[ - ] ó [A-B] ó [A=B] ó [A+B]`
+
+
+Qual recurso do android com jetpack poderia me ajudar a fazer isso?
+que opões eu posso usar?
+Te alguma sugestão de como fazer isso?
 
 ## Tela 4 Hierchy:
 1. mostra uma lista com os itens ordenados
@@ -186,6 +196,146 @@ Se quiser, podemos continuar com melhorias incrementais, como:
 * Separar mais logicamente `data/` e `domain/`.
 
 ---
+
+
+eu vou usar uma lista e aplicar o Matriz de Condorcet com pesos simplificadoso,
+na primeira parte eu pegaria um texto e vou fazer um split para criar uma lista com cada uma das linhas, cada linha é um titem da lista;
+agora eu gostaria de saber omo eu posso construir o método em  algoritmo paso a paso python
+
+
+
+Claro, Segodimo! Vamos construir um algoritmo passo a passo em Python para aplicar a **Matriz de Condorcet com pesos simplificados**, assumindo que você já tem um **texto com múltiplas linhas**, onde **cada linha é um item** (ex: alternativas em uma eleição ou votação).
+
+---
+
+### 🔹 Etapa 1: Definir o problema
+
+Você quer:
+
+1. Receber um texto onde cada linha representa um item.
+2. Comparar todos os itens entre si (votação par a par).
+3. Aplicar a Matriz de Condorcet usando "pesos simplificados".
+
+---
+
+### 🔹 Etapa 2: Interpretação dos pesos simplificados
+
+Vamos assumir que:
+
+* Cada pessoa (ou linha) dá uma ordenação dos itens (ex: "A > B > C"), ou
+* Cada item tem um peso numérico simples (ex: "A 3", "B 1", "C 2").
+
+**Confirme como os pesos são representados**, mas para agora, vamos usar o seguinte formato de entrada:
+
+```text
+Item A
+Item B
+Item C
+```
+
+---
+
+### 🔹 Etapa 3: Algoritmo passo a passo (Condorcet simplificado)
+
+```python
+def condorcet(texto):
+    # 1. Criar lista de itens a partir do texto
+    linhas = texto.strip().split('\n')
+    itens = [linha.strip() for linha in linhas if linha.strip()]
+
+    # 2. Inicializar matriz de vitórias (n x n)
+    n = len(itens)
+    matriz = [[0 for _ in range(n)] for _ in range(n)]
+
+    # 3. Simular votações com pesos (simplificação: posição na lista = preferência)
+    # Para cada par (i, j), se i < j na lista, item i ganha
+    for i in range(n):
+        for j in range(n):
+            if i == j:
+                continue
+            # Suponha que quem aparece primeiro é mais preferido
+            matriz[i][j] += 1  # i ganha de j
+
+    # 4. Mostrar a matriz de vitórias
+    print("Matriz de vitórias Condorcet:")
+    print("     " + "  ".join(f"{itens[j][:6]:>6}" for j in range(n)))
+    for i in range(n):
+        linha = [f"{matriz[i][j]:>6}" for j in range(n)]
+        print(f"{itens[i][:6]:>6} {'  '.join(linha)}")
+
+    # 5. Contar número de vitórias para cada item
+    vitorias = [0] * n
+    for i in range(n):
+        for j in range(n):
+            if matriz[i][j] > matriz[j][i]:
+                vitorias[i] += 1
+
+    # 6. Exibir resultados
+    ranking = sorted(zip(itens, vitorias), key=lambda x: -x[1])
+    print("\nRanking final (Condorcet simplificado):")
+    for i, (item, pontos) in enumerate(ranking):
+        print(f"{i+1}. {item} - {pontos} vitórias")
+
+# Exemplo de uso
+texto = """Banana
+Maçã
+Laranja
+Uva"""
+
+condorcet(texto)
+```
+
+---
+
+### 🔹 Explicação
+
+* **Passo 1**: Lê o texto e transforma em lista (`split('\n')`).
+* **Passo 2**: Cria uma matriz n x n.
+* **Passo 3**: Compara todos os pares (i, j). Neste exemplo, assume que todos preferem os primeiros itens da lista.
+* **Passo 4**: Imprime a matriz de vitórias.
+* **Passo 5**: Conta quantas vitórias cada item teve.
+* **Passo 6**: Exibe o ranking final.
+
+---
+
+Quer que eu adapte o algoritmo para um **formato de entrada diferente** (como votos ordenados, pesos explícitos, ou votos de várias pessoas)?
+
+
+---
+
+Agora tenho uma tela chamada HierchyScreen,
+que recebe do viewmodel SharedViewModel os dados processData 
+aqui esta o repositorio do projeto de android en para vc ver a estrutura en github: https://github.com/segodimor2d2/app-hierarchylist
+
+por agora estou recebendo o dados do processData,
+com esses dados eu quero fazer um split para cada salto de linha e assim obter uma lista.
+eu quero aplicar com essa lista, a Matriz de Condorcet com pesos simplificadoso e assim poder obter cada par de itens que eu vou querer comparar
+
+como eu poderia fazer isso?
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+---
+
 
 
 
