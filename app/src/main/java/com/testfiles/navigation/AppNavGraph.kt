@@ -6,7 +6,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.testfiles.ui.screen.EditScreen
 import com.testfiles.ui.screen.HomeScreen
-import com.testfiles.ui.screen.HierarchyProcessScreen
+import com.testfiles.ui.screen.CompareScreen
 import com.testfiles.viewmodel.SharedViewModel
 
 @Composable
@@ -35,8 +35,8 @@ fun AppNavGraph(
         }
 
         // Nova tela de Processamento (adicionada)
-        composable("processScreen") {
-            HierarchyProcessScreen(
+        composable("compare") {
+            CompareScreen(
                 navController = navController,
                 viewModel = viewModel
             )

@@ -51,7 +51,7 @@ Qual recurso do android com jetpack poderia me ajudar a fazer isso?
 que opões eu posso usar?
 Te alguma sugestão de como fazer isso?
 
-## Tela 4 Hierchy:
+## Tela 4 Ranking:
 1. mostra uma lista com os itens ordenados
 2. Possibilidade de mudar a ordem dos itens
 3. Botão Salvar Nova ordem

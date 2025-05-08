@@ -12,7 +12,7 @@ import androidx.navigation.NavController
 import com.testfiles.viewmodel.SharedViewModel
 
 @Composable
-fun HierarchyProcessScreen(
+fun CompareScreen(
     navController: NavController,
     viewModel: SharedViewModel
 ) {
@@ -34,14 +34,14 @@ fun HierarchyProcessScreen(
                 .systemBarsPadding()
                 .padding(16.dp)
         ) {
-            CustomHeaderHiechyProcess(navController)
+            CustomHeaderCompare(navController)
 
             Spacer(modifier = Modifier.height(24.dp))
 
             // Exibe o ranking após o cálculo
             if (!analyzing) {
                 Text(
-                    text = "Ranking Condorcet:",
+                    text = "Ranking:",
                     style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.align(Alignment.CenterHorizontally)
                 )
@@ -86,18 +86,18 @@ fun HierarchyProcessScreen(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
-                    Button(onClick = { respostas[currentIndex] = -1 }) { Text("[A - B]") }
+                    Button(onClick = { respostas[currentIndex] = -1 }) { Text("[A > B]") }
                     Button(onClick = { respostas[currentIndex] = 0 }) { Text("[A = B]") }
-                    Button(onClick = { respostas[currentIndex] = 1 }) { Text("[A + B]") }
+                    Button(onClick = { respostas[currentIndex] = 1 }) { Text("[A < B]") }
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
                     text = when (selected) {
-                        -1 -> "Você escolheu: [A - B]"
+                        -1 -> "Você escolheu: [A > B]"
                         0 -> "Você escolheu: [A = B]"
-                        1 -> "Você escolheu: [A + B]"
+                        1 -> "Você escolheu: [A < B]"
                         else -> "Nenhuma escolha feita."
                     },
                     modifier = Modifier.align(Alignment.CenterHorizontally)
@@ -148,7 +148,7 @@ fun HierarchyProcessScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CustomHeaderHiechyProcess(navController: NavController) {
+fun CustomHeaderCompare(navController: NavController) {
     Row(
         modifier = Modifier.padding(vertical = 16.dp),
         verticalAlignment = Alignment.CenterVertically
@@ -157,7 +157,7 @@ fun CustomHeaderHiechyProcess(navController: NavController) {
             Icon(Icons.Default.ArrowBack, contentDescription = "Voltar")
         }
         Text(
-            text = "Hierchy Proccess",
+            text = "Compare Process",
             style = MaterialTheme.typography.titleLarge,
             modifier = Modifier.padding(vertical = 16.dp)
         )
