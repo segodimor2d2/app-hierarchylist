@@ -12,6 +12,7 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
@@ -30,7 +31,6 @@ fun HomeScreen(navController: NavController, viewModel: SharedViewModel) {
     var showCreateFileButton by remember { mutableStateOf(true) }
     var showOpenFileButton by remember { mutableStateOf(true) }
     var showListFileButton by remember { mutableStateOf(false) }
-    var showAccessFolderButton by remember { mutableStateOf(false) }
 
     val folderPicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocumentTree(),
@@ -70,102 +70,107 @@ fun HomeScreen(navController: NavController, viewModel: SharedViewModel) {
                 .padding(16.dp)
         ) {
 
-            if (showCreateFileButton) {
-                Button( onClick = {
-                    if (folderUri == null){
-                        showCreateFileButton = false
-                        showOpenFileButton = false
-                        showAccessFolderButton  = true
-                    } else {
-                        showAccessFolderButton  = false
-                        folderUri?.let { folder ->
-                            val formatter = SimpleDateFormat("yyMMddHHmmss", Locale.getDefault())
-                            val fileName = formatter.format(Date()) + ".md"
+            if (folderUri == null) {
+                Text("Por favor, escolha uma pasta e permita o acesso a ela.")
 
-                            val docFolder = DocumentFile.fromTreeUri(context, folder)
-                            val newFile = docFolder?.createFile("text/markdown", fileName)
+                Spacer(modifier = Modifier.height(8.dp))
 
-                            newFile?.uri?.let { uri ->
-                                context.contentResolver.openOutputStream(uri)?.use { output ->
-                                    output.write("".toByteArray())
-                                }
-
-                                // Atualiza a lista localmente
-                                mdFiles = mdFiles + (fileName to uri)
-
-                                // Define o arquivo selecionado no ViewModel e navega
-                                viewModel.selectFile(uri)
-                                navController.navigate("edit")
-                            }
-                        }
-                    }
-                }
-                ) {
-                    Text("Criar uma lista")
-                }
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            if (showOpenFileButton) {
-                Button(onClick = {
-                    if (folderUri == null) {
-                        showCreateFileButton = false
-                        showOpenFileButton = false
-                        showAccessFolderButton  = true
-                    } else {
-                        showListFileButton = true
-                        showCreateFileButton = false
-                        showOpenFileButton = false
-                    }
-                }) {
-                    Text("Abrir uma lista")
-                }
-            }
-
-            if (showAccessFolderButton) {
-                Button( onClick = {
-                    folderPicker.launch(null)
-                    showOpenFileButton = true
-                    showCreateFileButton = true
-                    showAccessFolderButton  = false
-                }) {
-                    Text("Escolha uma pasta e de permissões")
-                }
-            }
-
-            if (showListFileButton) {
-
-                Row(
-                    modifier = Modifier.padding(vertical = 16.dp)
-                ) {
-                    IconButton(onClick = {
+                Button(
+                    onClick = {
+                        folderPicker.launch(null)
                         showOpenFileButton = true
                         showCreateFileButton = true
-                        showListFileButton  = false
-                    }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Voltar")
-                    }
-                    Text(
-                        text = "Listas",
-                        style = MaterialTheme.typography.titleLarge,
+                    }, modifier = Modifier.fillMaxWidth(), shape = RectangleShape
+                ) {
+                    Text("Continuar")
+                }
+            } else {
+                if (showListFileButton) {
+
+                    Row(
                         modifier = Modifier.padding(vertical = 16.dp)
-                    )
+                    ) {
+                        IconButton(onClick = {
+                            showOpenFileButton = true
+                            showCreateFileButton = true
+                            showListFileButton = false
+                        }) {
+                            Icon(Icons.Default.ArrowBack, contentDescription = "Voltar")
+                        }
+                        Text(
+                            text = "Listas",
+                            style = MaterialTheme.typography.titleLarge,
+                            modifier = Modifier.padding(vertical = 16.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    mdFiles.forEach { (name, uri) ->
+                        Text(
+                            text = name,
+                            modifier = Modifier
+                                .clickable {
+                                    viewModel.selectFile(uri)
+                                    navController.navigate("edit")
+                                }
+                                .padding(8.dp)
+                        )
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                mdFiles.forEach { (name, uri) ->
-                    Text(
-                        text = name,
-                        modifier = Modifier
-                            .clickable {
-                                viewModel.selectFile(uri)
-                                navController.navigate("edit")
-                            }
-                            .padding(8.dp)
-                    )
+                if (showOpenFileButton) {
+                    Button(onClick = {
+                        if (folderUri == null) {
+                            showCreateFileButton = false
+                            showOpenFileButton = false
+                        } else {
+                            showListFileButton = true
+                            showOpenFileButton = false
+                        }
+                    }, modifier = Modifier.fillMaxWidth(), shape = RectangleShape
+                    ) {
+                        Text("Abrir uma lista")
+                    }
                 }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                if (showCreateFileButton) {
+                    Button( onClick = {
+                        if (folderUri == null){
+                            showCreateFileButton = false
+                            showOpenFileButton = false
+                        } else {
+                            folderUri?.let { folder ->
+                                val formatter = SimpleDateFormat("yyMMddHHmmss", Locale.getDefault())
+                                val fileName = formatter.format(Date()) + ".md"
+
+                                val docFolder = DocumentFile.fromTreeUri(context, folder)
+                                val newFile = docFolder?.createFile("text/markdown", fileName)
+
+                                newFile?.uri?.let { uri ->
+                                    context.contentResolver.openOutputStream(uri)?.use { output ->
+                                        output.write("".toByteArray())
+                                    }
+
+                                    // Atualiza a lista localmente
+                                    mdFiles = mdFiles + (fileName to uri)
+
+                                    // Define o arquivo selecionado no ViewModel e navega
+                                    viewModel.selectFile(uri)
+                                    navController.navigate("edit")
+                                }
+                            }
+                        }
+                    }, modifier = Modifier.fillMaxWidth(), shape = RectangleShape
+                    ) {
+                        Text("Criar uma lista")
+                    }
+                }
+
             }
         }
     }

@@ -2,6 +2,7 @@ package com.testfiles.viewmodel
 
 import android.content.Context
 import android.net.Uri
+import androidx.documentfile.provider.DocumentFile
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.*
@@ -101,27 +102,49 @@ class SharedViewModel : ViewModel() {
             .map { it.toPair() }
     }
 
-    // Nova função para salvar o ranking no arquivo
-    fun saveRankingToFile(context: Context, uri: Uri, ranking: List<Pair<String, Int>>) {
+    // Função para criar cópia com prefixo "done_"
+    fun createDoneFileCopy(context: Context, originalUri: Uri, ranking: List<Pair<String, Int>>) {
         _isLoading.value = true
         viewModelScope.launch {
             try {
-                context.contentResolver.openOutputStream(uri)?.use { outputStream ->
-                    OutputStreamWriter(outputStream).use { writer ->
-                        val rankingContent = buildString {
-                            append("# hierarchylist\n")
+                // Extrai o caminho base do URI
+                val uriString = originalUri.toString()
+                val treeUri = if (uriString.contains("/tree/")) {
+                    Uri.parse(uriString.substringBefore("/document/"))
+                } else {
+                    originalUri
+                }
+
+                val treeFolder = DocumentFile.fromTreeUri(context, treeUri)
+                    ?: throw Exception("Não foi possível acessar a pasta")
+
+                val originalName = originalUri.lastPathSegment
+                    ?.substringAfterLast("%3A")
+                    ?.substringAfterLast("%2F")
+                    ?.substringAfterLast("/")  // Fallback para URIs com formato diferente
+                    ?.replace("%20", " ")
+                    ?: "ranking_${System.currentTimeMillis()}.md"
+
+                val newName = "done_$originalName"
+
+                // Cria e escreve no novo arquivo
+                val newFile = treeFolder.createFile("text/markdown", newName)
+                    ?: throw Exception("Falha ao criar arquivo")
+
+                newFile.uri?.let { newUri ->
+                    context.contentResolver.openOutputStream(newUri)?.use { output ->
+                        val content = buildString {
+                            append("# Ranking Concluído\n\n")
                             ranking.forEachIndexed { index, (item, score) ->
-                                append("${index + 1}. $item (${score}pts)\n")
+                                append("${index + 1}. $item ($score pts)\n")
                             }
                         }
-                        writer.write(rankingContent)
-                        _message.value = "Ranking salvo com sucesso!"
+                        output.write(content.toByteArray())
+                        _message.value = "$newName"
                     }
-                } ?: run {
-                    _message.value = "Erro: Não foi possível abrir o arquivo para escrita"
-                }
+                } ?: throw Exception("URI inválido para o novo arquivo")
             } catch (e: Exception) {
-                _message.value = "Erro ao salvar arquivo: ${e.localizedMessage}"
+                _message.value = "Erro ao criar cópia: ${e.localizedMessage}"
             } finally {
                 _isLoading.value = false
             }

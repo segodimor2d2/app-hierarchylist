@@ -7,6 +7,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.testfiles.viewmodel.SharedViewModel
@@ -86,9 +87,17 @@ fun CompareScreen(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
-                    Button(onClick = { respostas[currentIndex] = -1 }) { Text("[A > B]") }
-                    Button(onClick = { respostas[currentIndex] = 0 }) { Text("[A = B]") }
-                    Button(onClick = { respostas[currentIndex] = 1 }) { Text("[A < B]") }
+                    Button(onClick = { respostas[currentIndex] = -1 },
+                        modifier = Modifier, shape = RectangleShape
+                        ) { Text("[A > B]") }
+
+                    Button(onClick = { respostas[currentIndex] = 0 },
+                        modifier = Modifier, shape = RectangleShape
+                    ) { Text("[A = B]") }
+
+                    Button(onClick = { respostas[currentIndex] = 1 },
+                        modifier = Modifier, shape = RectangleShape
+                        ) { Text("[A < B]") }
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -111,11 +120,13 @@ fun CompareScreen(
                 ) {
                     Button(
                         onClick = { if (currentIndex > 0) currentIndex-- },
+                        modifier = Modifier, shape = RectangleShape,
                         enabled = currentIndex > 0
                     ) { Text("Anterior") }
 
                     Button(
                         onClick = { if (currentIndex < total - 1) currentIndex++ },
+                        modifier = Modifier, shape = RectangleShape,
                         enabled = currentIndex < total - 1
                     ) { Text("Próximo") }
                 }
@@ -132,7 +143,7 @@ fun CompareScreen(
                         currentIndex = 0
                     },
                     enabled = respostas.none { it == null },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(), shape = RectangleShape
                 ) {
                     Text("Finalizar")
                 }

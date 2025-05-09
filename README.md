@@ -347,8 +347,34 @@ como eu poderia fazer isso?
 ---
 
 Profavor analise o seguinte repositório no github:
-Eu subi de novo as atualisações no repositorio, Profavor analise o repositório no github:
+
+Profavor analise os arquivos dentro de testfiles no seguiente path /app/src/main/java/com/testfiles do seguinte repositório no github:
 https://github.com/segodimor2d2/app-hierarchylist
+
+
+├── MainActivity.kt
+├── navigation
+│   └── AppNavGraph.kt
+├── ui
+│   ├── screen
+│   │   ├── CompareScreen.kt
+│   │   ├── EditScreen.kt
+│   │   ├── HomeScreen.kt
+│   │   └── RankingScreen.kt
+│   └── theme
+│       ├── Color.kt
+│       ├── Theme.kt
+│       └── Type.kt
+├── util
+│   ├── FileUtils.kt
+│   └── PreferencesUtil.kt
+└── viewmodel
+    └── SharedViewModel.kt
+
+porfavor me diga como eu consegui criar um arquivo na tela HomeScreen e salvar na pasta que di permições na pasta?
+
+
+
 
 
 ---

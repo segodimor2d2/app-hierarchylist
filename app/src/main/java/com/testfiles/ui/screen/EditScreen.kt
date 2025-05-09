@@ -12,6 +12,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
@@ -68,25 +69,25 @@ fun EditScreen(navController: NavController, viewModel: SharedViewModel) {
                     modifier = Modifier.fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    // Botão Salvar
-                    Button(
-                        onClick = {
-                            message = saveFileContent(context, fileUri, fileContent)
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("Salvar Alterações")
-                    }
 
                     // Botão Processar
                     Button(
                         onClick = {
+                            message = saveFileContent(context, fileUri, fileContent)
                             viewModel.processData(fileContent)
                             navController.navigate("compare")
-                        },
-                        modifier = Modifier.fillMaxWidth()
+                        }, modifier = Modifier.fillMaxWidth(), shape = RectangleShape
                     ) {
-                        Text("Process")
+                        Text("Comparar")
+                    }
+
+                    // Botão Salvar
+                    Button(
+                        onClick = {
+                            message = saveFileContent(context, fileUri, fileContent)
+                        }, modifier = Modifier.fillMaxWidth(), shape = RectangleShape
+                    ) {
+                        Text("Salvar Alterações")
                     }
                 }
 
