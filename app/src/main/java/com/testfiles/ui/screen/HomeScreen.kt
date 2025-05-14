@@ -1,17 +1,18 @@
 package com.testfiles.ui.screen
 
-
 import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -27,8 +28,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.List
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -45,7 +46,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -101,77 +101,79 @@ fun HomeScreen(navController: NavController, viewModel: SharedViewModel) {
             modifier = Modifier
                 .fillMaxSize()
                 .systemBarsPadding()
-                .padding(16.dp)
+                //.padding(horizontal = 24.dp)
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(bottom = 72.dp) // adiciona espaço para o botão
-            ) {
-                if (folderUri == null) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        SolicitarAcessoCard {
-                            folderPicker.launch(null)
-                            showOpenFileButton = true
-                        }
+
+            if (folderUri == null) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    SolicitarAcessoCard {
+                        folderPicker.launch(null)
+                        showOpenFileButton = true
                     }
-                } else {
+                }
+            } else {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .systemBarsPadding()
+                    .padding(horizontal = 16.dp)
+                ) {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 16.dp)
+                            .padding(bottom = 84.dp) // 52dp button + 32dp do padding
                     ) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Voltar")
-                        Text(
-                            text = "Listas",
-                            style = MaterialTheme.typography.titleLarge,
-                            modifier = Modifier.padding(vertical = 16.dp)
+
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 24.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .clickable { navController.popBackStack() }
+                                    .padding(vertical = 16.dp)
+                            ) {
+                                Icon(
+                                    Icons.Default.ArrowBack,
+                                    contentDescription = "Voltar",
+                                    modifier = Modifier
+                                )
+                            }
+
+                            Text(
+                                text = "Listas",
+                                style = MaterialTheme.typography.titleLarge,
+                            )
+
+                        }
+
+                        FileGridView(
+                            mdFiles = mdFiles,
+                            navController = navController,
+                            viewModel = viewModel
                         )
+
                     }
 
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    FileGridView(
-                        mdFiles = mdFiles,
-                        navController = navController,
-                        viewModel = viewModel
-                    )
-                }
-            }
-
-            // Botão fixado na parte inferior
-            if (folderUri != null) {
-                Button(
-                    onClick = {
-                        folderUri?.let { folder ->
-                            val formatter = SimpleDateFormat("yyMMddHHmmss", Locale.getDefault())
-                            val fileName = formatter.format(Date()) + ".md"
-                            val docFolder = DocumentFile.fromTreeUri(context, folder)
-                            val newFile = docFolder?.createFile("text/markdown", fileName)
-
-                            newFile?.uri?.let { uri ->
-                                context.contentResolver.openOutputStream(uri)?.use { output ->
-                                    output.write("".toByteArray())
-                                }
-
-                                mdFiles = mdFiles + (fileName to uri)
-
-                                viewModel.selectFile(uri)
-                                navController.navigate("edit")
-                            }
-                        }
-                    },
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .fillMaxWidth()
-                        .padding(top = 8.dp),
-                    shape = RoundedCornerShape(4.dp),
-                ) {
-                    Text("Criar uma lista")
+                    Box(
+                        modifier = Modifier
+                            .padding(vertical = 16.dp)
+                            .align(Alignment.BottomCenter)
+                    ) {
+                        CreateListButton(
+                            folderUri = folderUri,
+                            context = context,
+                            mdFiles = mdFiles,
+                            setMdFiles = { mdFiles = it },
+                            navController = navController,
+                            viewModel = viewModel
+                        )
+                    }
                 }
             }
         }
@@ -188,7 +190,6 @@ fun SolicitarAcessoCard(
             .fillMaxWidth(0.9f), // define uma largura menor para centralizar melhor
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(8.dp),
-        // colors = CardDefaults.cardColors(containerColor = Color(0xFF1C1B1F))
     ) {
         Column(modifier = Modifier.padding(24.dp)) {
             Text(
@@ -200,7 +201,6 @@ fun SolicitarAcessoCard(
             Text(
                 text = "Para iniciar, por favor escolha uma pasta e permita o acesso a ela.",
                 style = MaterialTheme.typography.bodyMedium,
-                // color = Color(0xFFBDBDBD)
             )
             Spacer(modifier = Modifier.height(16.dp))
             Row(
@@ -210,7 +210,6 @@ fun SolicitarAcessoCard(
                 TextButton(onClick = onContinue) {
                     Text(
                         text = "Continuar",
-                        // color = Color(0xFFB69DF8)
                     )
                 }
             }
@@ -228,12 +227,11 @@ fun FileGridView(
     viewModel: SharedViewModel
 ) {
     LazyVerticalGrid(
-        columns = GridCells.Fixed(5), // ou use Adaptive(100.dp)
+        columns = GridCells.Fixed(6), // ou use Adaptive(100.dp)
         modifier = Modifier
-            .fillMaxSize()
-            .padding(8.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
+            .background(Color.Red)
+            .fillMaxWidth()
+            .fillMaxHeight()
     ) {
         items(mdFiles) { (name, uri) ->
             val isDone = name.startsWith("done_")
@@ -243,6 +241,7 @@ fun FileGridView(
             Column(
                 modifier = Modifier
                     .width(72.dp)
+                    //.background(Color.Green)
                     .clickable {
                         viewModel.selectFile(uri)
                         navController.navigate("edit")
@@ -267,5 +266,51 @@ fun FileGridView(
                 )
             }
         }
+    }
+}
+
+@Composable
+fun CreateListButton(
+    folderUri: Uri?,
+    context: android.content.Context,
+    mdFiles: List<Pair<String, Uri>>,
+    setMdFiles: (List<Pair<String, Uri>>) -> Unit,
+    navController: NavController,
+    viewModel: SharedViewModel
+) {
+    Button(
+        onClick = {
+            folderUri?.let { folder ->
+                val formatter = SimpleDateFormat("yyMMddHHmmss", Locale.getDefault())
+                val fileName = formatter.format(Date()) + ".md"
+                val docFolder = DocumentFile.fromTreeUri(context, folder)
+                val newFile = docFolder?.createFile("text/markdown", fileName)
+
+                newFile?.uri?.let { uri ->
+                    context.contentResolver.openOutputStream(uri)?.use { output ->
+                        output.write("".toByteArray())
+                    }
+
+                    setMdFiles(mdFiles + (fileName to uri))
+                    viewModel.selectFile(uri)
+                    navController.navigate("edit")
+                }
+            }
+        },
+        modifier = Modifier
+            //.align(Alignment.BottomCenter)
+            .fillMaxWidth(),
+            //.padding(16.dp),
+        shape = RoundedCornerShape(4.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = Color.Blue,
+            contentColor = Color.White
+        )
+    ) {
+        Text(
+            text = "Criar uma lista",
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.padding(vertical = 8.dp)
+        )
     }
 }

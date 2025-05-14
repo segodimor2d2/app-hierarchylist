@@ -39,69 +39,90 @@ fun EditScreen(navController: NavController, viewModel: SharedViewModel) {
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
     ) {
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .systemBarsPadding()
-                .padding(16.dp)
+                .background(Color.Red)
         ) {
-            CustomHeaderEdit(navController)
+          Column(
+              modifier = Modifier
+                  .fillMaxSize()
+                  .background(Color.Red)
+          ) {
+              Column(
+                  modifier = Modifier
+                      .fillMaxWidth()
+                      //.padding(vertical = 16.dp)
+              ) {
+                  IconButton(onClick = { navController.popBackStack() }) {
+                      Icon(Icons.Default.ArrowBack, contentDescription = "Voltar")
+                  }
+                  Text(
+                      text = "Edit List",
+                      style = MaterialTheme.typography.titleLarge,
+                      // modifier = Modifier.padding(vertical = 16.dp)
+                  )
+              }
 
-            Spacer(modifier = Modifier.height(8.dp))
+              Spacer(modifier = Modifier.height(8.dp))
 
-            if (isLoading) {
-                CircularProgressIndicator()
-            } else {
-                // Campo de edição do arquivo
-                TextField(
-                    value = fileContent,
-                    onValueChange = { fileContent = it },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(300.dp),
-                    label = { Text("Conteúdo do Arquivo") }
-                )
+              if (isLoading) {
+                  CircularProgressIndicator()
+              } else {
+                  // Campo de edição do arquivo
+                  TextField(
+                      value = fileContent,
+                      onValueChange = { fileContent = it },
+                      modifier = Modifier
+                          .fillMaxWidth()
+                          .height(300.dp),
+                      label = { Text("Conteúdo do Arquivo") }
+                  )
 
-                Spacer(modifier = Modifier.height(16.dp))
+                  Spacer(modifier = Modifier.height(16.dp))
 
-                // Botões de ação
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
+                  // Botões de ação
+                  Column(
+                      modifier = Modifier.fillMaxWidth(),
+                      verticalArrangement = Arrangement.spacedBy(8.dp)
+                  ) {
 
-                    // Botão Processar
-                    Button(
-                        onClick = {
-                            message = saveFileContent(context, fileUri, fileContent)
-                            viewModel.processData(fileContent)
-                            navController.navigate("compare")
-                        }, modifier = Modifier.fillMaxWidth(), shape = RectangleShape
-                    ) {
-                        Text("Comparar")
-                    }
+                      // Botão Processar
+                      Button(
+                          onClick = {
+                              message = saveFileContent(context, fileUri, fileContent)
+                              viewModel.processData(fileContent)
+                              navController.navigate("compare")
+                          }, modifier = Modifier.fillMaxWidth(), shape = RectangleShape
+                      ) {
+                          Text("Comparar")
+                      }
 
-                    // Botão Salvar
-                    Button(
-                        onClick = {
-                            message = saveFileContent(context, fileUri, fileContent)
-                        }, modifier = Modifier.fillMaxWidth(), shape = RectangleShape
-                    ) {
-                        Text("Salvar Alterações")
-                    }
-                }
+                      // Botão Salvar
+                      Button(
+                          onClick = {
+                              message = saveFileContent(context, fileUri, fileContent)
+                          }, modifier = Modifier.fillMaxWidth(), shape = RectangleShape
+                      ) {
+                          Text("Salvar Alterações")
+                      }
+                  }
 
-                // Exibição de mensagens
-                message?.let {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = it,
-                        color = if (it.startsWith("Erro")) MaterialTheme.colorScheme.error
-                        else MaterialTheme.colorScheme.primary
-                    )
-                }
-            }
+                  // Exibição de mensagens
+                  message?.let {
+                      Spacer(modifier = Modifier.height(8.dp))
+                      Text(
+                          text = it,
+                          color = if (it.startsWith("Erro")) MaterialTheme.colorScheme.error
+                          else MaterialTheme.colorScheme.primary
+                      )
+                  }
+              }
+          }
+
         }
+
     }
 }
 
@@ -134,20 +155,3 @@ private fun saveFileContent(context: Context, fileUri: Uri?, content: String): S
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun CustomHeaderEdit(navController: NavController) {
-    Row(
-        modifier = Modifier.padding(vertical = 16.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        IconButton(onClick = { navController.popBackStack() }) {
-            Icon(Icons.Default.ArrowBack, contentDescription = "Voltar")
-        }
-        Text(
-            text = "Edit List",
-            style = MaterialTheme.typography.titleLarge,
-            modifier = Modifier.padding(vertical = 16.dp)
-        )
-    }
-}
