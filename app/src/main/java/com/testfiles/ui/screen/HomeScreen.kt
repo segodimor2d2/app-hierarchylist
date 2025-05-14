@@ -169,7 +169,7 @@ fun HomeScreen(navController: NavController, viewModel: SharedViewModel) {
                         .align(Alignment.BottomCenter)
                         .fillMaxWidth()
                         .padding(top = 8.dp),
-                    shape = RoundedCornerShape(8.dp),
+                    shape = RoundedCornerShape(4.dp),
                 ) {
                     Text("Criar uma lista")
                 }
