@@ -2,22 +2,24 @@ package com.testfiles.ui.screen
 
 import android.content.Context
 import android.net.Uri
-import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.testfiles.viewmodel.SharedViewModel
 import java.io.OutputStreamWriter
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color // Para as cores customizadas, se necessário
+import androidx.compose.material3.TextFieldDefaults
+
 
 @Composable
 fun EditScreen(navController: NavController, viewModel: SharedViewModel) {
@@ -43,86 +45,91 @@ fun EditScreen(navController: NavController, viewModel: SharedViewModel) {
             modifier = Modifier
                 .fillMaxSize()
                 .systemBarsPadding()
-                .background(Color.Red)
+                .padding(horizontal = 16.dp)
         ) {
-          Column(
-              modifier = Modifier
-                  .fillMaxSize()
-                  .background(Color.Red)
-          ) {
-              Column(
-                  modifier = Modifier
-                      .fillMaxWidth()
-                      //.padding(vertical = 16.dp)
-              ) {
-                  IconButton(onClick = { navController.popBackStack() }) {
-                      Icon(Icons.Default.ArrowBack, contentDescription = "Voltar")
-                  }
-                  Text(
-                      text = "Edit List",
-                      style = MaterialTheme.typography.titleLarge,
-                      // modifier = Modifier.padding(vertical = 16.dp)
-                  )
-              }
+            if (isLoading) {
+                CircularProgressIndicator()
+            } else {
 
-              Spacer(modifier = Modifier.height(8.dp))
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 136.dp) // 104dp botão + 48dp de padding
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 24.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .clickable { navController.popBackStack() }
+                                .padding(vertical = 16.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.ArrowBack,
+                                contentDescription = "Voltar"
+                            )
+                        }
 
-              if (isLoading) {
-                  CircularProgressIndicator()
-              } else {
-                  // Campo de edição do arquivo
-                  TextField(
-                      value = fileContent,
-                      onValueChange = { fileContent = it },
-                      modifier = Modifier
-                          .fillMaxWidth()
-                          .height(300.dp),
-                      label = { Text("Conteúdo do Arquivo") }
-                  )
+                        Text(
+                            text = "Edit List",
+                            style = MaterialTheme.typography.titleLarge,
+                        )
+                    }
 
-                  Spacer(modifier = Modifier.height(16.dp))
+                    // Mensagem de feedback
+                    message?.let {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = it,
+                            color = if (it.startsWith("Erro")) MaterialTheme.colorScheme.error
+                            else MaterialTheme.colorScheme.primary
+                        )
+                    }
 
-                  // Botões de ação
-                  Column(
-                      modifier = Modifier.fillMaxWidth(),
-                      verticalArrangement = Arrangement.spacedBy(8.dp)
-                  ) {
+                    // Campo de texto para edição
 
-                      // Botão Processar
-                      Button(
-                          onClick = {
-                              message = saveFileContent(context, fileUri, fileContent)
-                              viewModel.processData(fileContent)
-                              navController.navigate("compare")
-                          }, modifier = Modifier.fillMaxWidth(), shape = RectangleShape
-                      ) {
-                          Text("Comparar")
-                      }
 
-                      // Botão Salvar
-                      Button(
-                          onClick = {
-                              message = saveFileContent(context, fileUri, fileContent)
-                          }, modifier = Modifier.fillMaxWidth(), shape = RectangleShape
-                      ) {
-                          Text("Salvar Alterações")
-                      }
-                  }
+                    TextField(
+                        value = fileContent,
+                        onValueChange = { fileContent = it },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .fillMaxHeight(),
+                        label = { Text("Conteúdo do Arquivo") },
+                        shape = RoundedCornerShape(4.dp),
+                        colors = TextFieldDefaults.colors(
+                            focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                            unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                            focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                            focusedIndicatorColor = Color.Transparent,
+                            unfocusedIndicatorColor = Color.Transparent,
+                            cursorColor = MaterialTheme.colorScheme.primary
+                        )
+                    )
 
-                  // Exibição de mensagens
-                  message?.let {
-                      Spacer(modifier = Modifier.height(8.dp))
-                      Text(
-                          text = it,
-                          color = if (it.startsWith("Erro")) MaterialTheme.colorScheme.error
-                          else MaterialTheme.colorScheme.primary
-                      )
-                  }
-              }
-          }
 
+                }
+
+                Box(
+                    modifier = Modifier
+                        .padding(vertical = 16.dp)
+                        .align(Alignment.BottomCenter)
+                ) {
+                    // Aqui passamos as variáveis necessárias
+                    EditButtons(
+                        context = context,
+                        fileUri = fileUri,
+                        fileContent = fileContent,
+                        onSave = { message = it },
+                        viewModel = viewModel,
+                        navController = navController
+                    )
+                }
+            }
         }
-
     }
 }
 
@@ -155,3 +162,61 @@ private fun saveFileContent(context: Context, fileUri: Uri?, content: String): S
     }
 }
 
+@Composable
+fun EditButtons(
+    context: Context,
+    fileUri: Uri?,
+    fileContent: String,
+    onSave: (String) -> Unit,
+    viewModel: SharedViewModel,
+    navController: NavController
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        // Botão Comparar
+        Button(
+            onClick = {
+                val result = saveFileContent(context, fileUri, fileContent)
+                onSave(result)
+                viewModel.processData(fileContent)
+                navController.navigate("compare")
+            },
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary
+            ),
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(4.dp),
+        ) {
+            Text(
+                text = "Comparar",
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(vertical = 8.dp)
+            )
+        }
+
+        //Spacer(modifier = Modifier.height(8.dp))
+
+        // Botão Salvar Alterações
+        Button(
+            onClick = {
+                val result = saveFileContent(context, fileUri, fileContent)
+                onSave(result)
+            },
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.secondary,
+                contentColor = MaterialTheme.colorScheme.onSecondary
+            ),
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(4.dp),
+        ) {
+            Text(
+                text = "Salvar Alterações",
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(vertical = 8.dp)
+            )
+        }
+    }
+}

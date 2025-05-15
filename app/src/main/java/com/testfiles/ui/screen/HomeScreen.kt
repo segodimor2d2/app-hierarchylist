@@ -5,7 +5,6 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -29,7 +28,6 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -101,7 +99,6 @@ fun HomeScreen(navController: NavController, viewModel: SharedViewModel) {
             modifier = Modifier
                 .fillMaxSize()
                 .systemBarsPadding()
-                //.padding(horizontal = 24.dp)
         ) {
 
             if (folderUri == null) {
@@ -229,7 +226,6 @@ fun FileGridView(
     LazyVerticalGrid(
         columns = GridCells.Fixed(6), // ou use Adaptive(100.dp)
         modifier = Modifier
-            .background(Color.Red)
             .fillMaxWidth()
             .fillMaxHeight()
     ) {
@@ -241,7 +237,6 @@ fun FileGridView(
             Column(
                 modifier = Modifier
                     .width(72.dp)
-                    //.background(Color.Green)
                     .clickable {
                         viewModel.selectFile(uri)
                         navController.navigate("edit")
@@ -290,7 +285,6 @@ fun CreateListButton(
                     context.contentResolver.openOutputStream(uri)?.use { output ->
                         output.write("".toByteArray())
                     }
-
                     setMdFiles(mdFiles + (fileName to uri))
                     viewModel.selectFile(uri)
                     navController.navigate("edit")
@@ -298,14 +292,8 @@ fun CreateListButton(
             }
         },
         modifier = Modifier
-            //.align(Alignment.BottomCenter)
             .fillMaxWidth(),
-            //.padding(16.dp),
         shape = RoundedCornerShape(4.dp),
-        colors = ButtonDefaults.buttonColors(
-            containerColor = Color.Blue,
-            contentColor = Color.White
-        )
     ) {
         Text(
             text = "Criar uma lista",
