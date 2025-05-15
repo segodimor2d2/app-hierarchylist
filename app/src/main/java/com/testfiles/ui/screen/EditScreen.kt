@@ -78,26 +78,22 @@ fun EditScreen(navController: NavController, viewModel: SharedViewModel) {
                         )
                     }
 
-                    // Mensagem de feedback
-                    message?.let {
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = it,
-                            color = if (it.startsWith("Erro")) MaterialTheme.colorScheme.error
-                            else MaterialTheme.colorScheme.primary
-                        )
-                    }
-
                     // Campo de texto para edição
-
-
                     TextField(
                         value = fileContent,
                         onValueChange = { fileContent = it },
                         modifier = Modifier
                             .fillMaxWidth()
                             .fillMaxHeight(),
-                        label = { Text("Conteúdo do Arquivo") },
+                        label = {
+                            message?.let {
+                                Text(
+                                    text = it,
+                                    color = if (it.startsWith("Erro")) MaterialTheme.colorScheme.error
+                                    else MaterialTheme.colorScheme.primary
+                                )
+                            } ?: Text("Digite algo")
+                        },
                         shape = RoundedCornerShape(4.dp),
                         colors = TextFieldDefaults.colors(
                             focusedTextColor = MaterialTheme.colorScheme.onSurface,
@@ -109,8 +105,6 @@ fun EditScreen(navController: NavController, viewModel: SharedViewModel) {
                             cursorColor = MaterialTheme.colorScheme.primary
                         )
                     )
-
-
                 }
 
                 Box(

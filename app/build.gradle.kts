@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.jetbrainsKotlinSerialization)
+
 }
 
 android {
@@ -27,6 +28,9 @@ android {
                 "proguard-rules.pro"
             )
         }
+    }
+    composeOptions {
+        kotlinCompilerExtensionVersion = "1.6.0"
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
@@ -54,6 +58,7 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.androidx.documentfile)
+    implementation(libs.compose.foundation)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
@@ -62,4 +67,5 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+
 }

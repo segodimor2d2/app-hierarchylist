@@ -1,5 +1,9 @@
 package com.testfiles.ui.screen
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -7,10 +11,18 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.testfiles.viewmodel.SharedViewModel
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+
+
+
+
 
 @Composable
 fun CompareScreen(
@@ -18,160 +30,170 @@ fun CompareScreen(
     viewModel: SharedViewModel
 ) {
     val itemPairs by viewModel.itemPairs.collectAsState()
-    val ranking by viewModel.ranking.collectAsState()
 
     // Inicia direto na análise
     var analyzing by remember { mutableStateOf(true) }
     var currentIndex by remember { mutableStateOf(0) }
     val respostas = remember { mutableStateListOf<Int?>().apply { repeat(itemPairs.size) { add(null) } } }
+    val userAnswers = remember { mutableStateListOf<String?>() }
 
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
     ) {
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .systemBarsPadding()
-                .padding(16.dp)
+                .padding(horizontal = 16.dp)
         ) {
-            CustomHeaderHiechyProcess(navController)
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Column(
+                modifier = Modifier.fillMaxSize()
+            ) {
 
-            // Exibe o ranking após o cálculo
-            if (!analyzing) {
-                Text(
-                    text = "Ranking:",
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.align(Alignment.CenterHorizontally)
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                ranking.forEachIndexed { index, (item, score) ->
-                    Text(text = "${index + 1}. $item - Pontos: $score")
-                }
-
-                return@Column // Não exibe a análise de pares se o ranking foi calculado
-            }
-
-            // Análise de pares diretamente ao iniciar
-            val total = itemPairs.size
-            if (total > 0) {
-                val currentPair = itemPairs[currentIndex]
-                val selected = respostas[currentIndex]
-
-                Text(
-                    text = "Comparação ${currentIndex + 1} de $total",
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.align(Alignment.CenterHorizontally)
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Row(
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp),
-                    horizontalArrangement = Arrangement.SpaceEvenly
+                        .padding(bottom = 24.dp)
                 ) {
-                    Text(currentPair.first)
-                    Text("VS")
-                    Text(currentPair.second)
+                    Box(
+                        modifier = Modifier
+                            .clickable { navController.popBackStack() }
+                            .padding(vertical = 16.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.ArrowBack,
+                            contentDescription = "Voltar"
+                        )
+                    }
+
+                    Text(
+                        text = "Proceso de Hierarquia",
+                        style = MaterialTheme.typography.titleLarge,
+                    )
                 }
 
-                Spacer(modifier = Modifier.height(8.dp))
+                val total = itemPairs.size
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly
-                ) {
-                    Button(onClick = { respostas[currentIndex] = -1 },
-                        modifier = Modifier, shape = RectangleShape
-                        ) { Text("[A > B]") }
+                if (total > 0) {
+                    val optionColors = mapOf(
+                        -1 to Color(0xFFEF5350), // vermelho
+                        0 to Color(0xFF42A5F5),  // azul
+                        1 to Color(0xFF66BB6A)   // verde
+                    )
+                    val pagerState = rememberPagerState(initialPage = 0, pageCount = { total })
 
-                    Button(onClick = { respostas[currentIndex] = 0 },
-                        modifier = Modifier, shape = RectangleShape
-                    ) { Text("[A = B]") }
+                    val currentPage = pagerState.currentPage
+                    val selected = respostas.getOrNull(currentPage)
+                    val currentPair = itemPairs.getOrNull(currentPage)
 
-                    Button(onClick = { respostas[currentIndex] = 1 },
-                        modifier = Modifier, shape = RectangleShape
-                        ) { Text("[A < B]") }
-                }
+                    val currentColor = optionColors[selected] ?: Color.Unspecified
 
-                Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Comparação ${currentPage + 1} de $total",
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.align(Alignment.CenterHorizontally)
+                    )
 
-                Text(
-                    text = when (selected) {
-                        -1 -> "Você escolheu: [A > B]"
-                        0 -> "Você escolheu: [A = B]"
-                        1 -> "Você escolheu: [A > B]"
-                        else -> "Nenhuma escolha feita."
-                    },
-                    modifier = Modifier.align(Alignment.CenterHorizontally)
-                )
+                    Spacer(modifier = Modifier.height(8.dp))
 
-                Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = when (selected) {
+                            -1 -> "Você escolheu: ${currentPair?.first} > ${currentPair?.second}"
+                            0 -> "Você escolheu: ${currentPair?.first} = ${currentPair?.second}"
+                            1 -> "Você escolheu: ${currentPair?.first} < ${currentPair?.second}"
+                            else -> "Nenhuma escolha feita."
+                        },
+                        modifier = Modifier.align(Alignment.CenterHorizontally),
+                        color = currentColor
+                    )
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    HorizontalPager(
+                        state = pagerState
+                    ) { page ->
+                        val currentPair = itemPairs[page]
+
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 16.dp)
+                        ) {
+                            Button(
+                                onClick = { respostas[page] = -1 },
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RectangleShape,
+                                border = if (respostas[page] == -1) BorderStroke(2.dp, Color.White) else null,
+                                colors = ButtonDefaults.buttonColors(containerColor = optionColors[-1]!!)
+                            ) {
+                                Text(
+                                    text = "${currentPair.first}\né MAIS importante do que\n${currentPair.second}",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    modifier = Modifier.padding(8.dp)
+                                )
+                            }
+
+                            Button(
+                                onClick = { respostas[page] = 0 },
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RectangleShape,
+                                border = if (respostas[page] == 0) BorderStroke(2.dp, Color.White) else null,
+                                colors = ButtonDefaults.buttonColors(containerColor = optionColors[0]!!)
+                            ) {
+                                Text(
+                                    text = "${currentPair.first}\né IGUAL de importante do que\n${currentPair.second}",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    modifier = Modifier.padding(8.dp)
+                                )
+                            }
+
+                            Button(
+                                onClick = { respostas[page] = 1 },
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RectangleShape,
+                                border = if (respostas[page] == 1) BorderStroke(2.dp, Color.White) else null,
+                                colors = ButtonDefaults.buttonColors(containerColor = optionColors[1]!!)
+                            ) {
+                                Text(
+                                    text = "${currentPair.first}\né MENOS importante do que\n${currentPair.second}",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    modifier = Modifier.padding(8.dp)
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Aqui criamos a variável que monitora se todas as respostas foram feitas
+                    val allAnswered = respostas.none { it == null }
+
                     Button(
-                        onClick = { if (currentIndex > 0) currentIndex-- },
-                        modifier = Modifier, shape = RectangleShape,
-                        enabled = currentIndex > 0
-                    ) { Text("Anterior") }
-
-                    Button(
-                        onClick = { if (currentIndex < total - 1) currentIndex++ },
-                        modifier = Modifier, shape = RectangleShape,
-                        enabled = currentIndex < total - 1
-                    ) { Text("Próximo") }
+                        onClick = {
+                            println("Respostas: $respostas")
+                            viewModel.calcularRankingCondorcet(respostas)
+                            navController.navigate("ranking")
+                            analyzing = false
+                        },
+                        enabled = allAnswered,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RectangleShape,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (allAnswered) MaterialTheme.colorScheme.primary else Color.Gray
+                        )
+                    ) {
+                        Text("Finalizar")
+                    }
+                } else {
+                    Text(
+                        text = "Nenhum par disponível para comparar.",
+                        modifier = Modifier.align(Alignment.CenterHorizontally),
+                        style = MaterialTheme.typography.bodyLarge
+                    )
                 }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Button(
-                    onClick = {
-                        println("Respostas: $respostas")
-                        // Calcula o ranking Condorcet
-                        viewModel.calcularRankingCondorcet(respostas)
-                        navController.navigate("ranking")
-                        analyzing = false
-                        currentIndex = 0
-                    },
-                    enabled = respostas.none { it == null },
-                    modifier = Modifier.fillMaxWidth(), shape = RectangleShape
-                ) {
-                    Text("Finalizar")
-                }
-            } else {
-                Text(
-                    text = "Nenhum par disponível para comparar.",
-                    modifier = Modifier.align(Alignment.CenterHorizontally),
-                    style = MaterialTheme.typography.bodyLarge
-                )
             }
         }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun CustomHeaderHiechyProcess(navController: NavController) {
-    Row(
-        modifier = Modifier.padding(vertical = 16.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        IconButton(onClick = { navController.popBackStack() }) {
-            Icon(Icons.Default.ArrowBack, contentDescription = "Voltar")
-        }
-        Text(
-            text = "Hierchy Proccess",
-            style = MaterialTheme.typography.titleLarge,
-            modifier = Modifier.padding(vertical = 16.dp)
-        )
     }
 }
