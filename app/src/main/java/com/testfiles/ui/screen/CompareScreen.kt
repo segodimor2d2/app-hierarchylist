@@ -1,9 +1,9 @@
 package com.testfiles.ui.screen
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -13,29 +13,25 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.testfiles.viewmodel.SharedViewModel
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import kotlinx.coroutines.launch
+import kotlin.math.abs
 
-
-
-
-
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CompareScreen(
     navController: NavController,
     viewModel: SharedViewModel
 ) {
     val itemPairs by viewModel.itemPairs.collectAsState()
-
-    // Inicia direto na análise
-    var analyzing by remember { mutableStateOf(true) }
-    var currentIndex by remember { mutableStateOf(0) }
     val respostas = remember { mutableStateListOf<Int?>().apply { repeat(itemPairs.size) { add(null) } } }
-    val userAnswers = remember { mutableStateListOf<String?>() }
+    val scope = rememberCoroutineScope()
 
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -47,11 +43,10 @@ fun CompareScreen(
                 .systemBarsPadding()
                 .padding(horizontal = 16.dp)
         ) {
-
             Column(
                 modifier = Modifier.fillMaxSize()
             ) {
-
+                // Top bar
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -78,9 +73,8 @@ fun CompareScreen(
 
                 if (total > 0) {
                     val optionColors = mapOf(
-                        -1 to Color(0xFFEF5350), // vermelho
-                        0 to Color(0xFF42A5F5),  // azul
-                        1 to Color(0xFF66BB6A)   // verde
+                        -1 to Color.Gray,
+                        1 to Color.Gray
                     )
                     val pagerState = rememberPagerState(initialPage = 0, pageCount = { total })
 
@@ -98,6 +92,61 @@ fun CompareScreen(
 
                     Spacer(modifier = Modifier.height(8.dp))
 
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // SLIDER
+                    HorizontalPager(
+                        state = pagerState,
+                        modifier = Modifier.weight(1f) // ocupa o espaço disponível
+                    ) { page ->
+                        val currentPair = itemPairs[page]
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Button(
+                                onClick = { respostas[page] = -1 },
+                                modifier = Modifier.weight(1f), // ocupa metade do espaço
+                                shape = RectangleShape,
+                                border = if (respostas[page] == -1) BorderStroke(2.dp, Color.White) else null,
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = if (respostas[page] == -1)
+                                        MaterialTheme.colorScheme.primary
+                                    else
+                                        optionColors[-1]!!
+                                )
+
+                            ) {
+                                Text(
+                                    text = "${currentPair.first}\né MAIS importante do que\n${currentPair.second}",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    modifier = Modifier.padding(8.dp)
+                                )
+                            }
+
+                            Button(
+                                onClick = { respostas[page] = 1 },
+                                modifier = Modifier.weight(1f), // ocupa metade do espaço
+                                shape = RectangleShape,
+                                border = if (respostas[page] == 1) BorderStroke(2.dp, Color.White) else null,
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = if (respostas[page] == 1)
+                                        MaterialTheme.colorScheme.primary
+                                    else
+                                        optionColors[-1]!!
+                                )
+                            ) {
+                                Text(
+                                    text = "${currentPair.first}\né MENOS importante do que\n${currentPair.second}",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    modifier = Modifier.padding(8.dp)
+                                )
+                            }
+                        }
+                    }
+
                     Text(
                         text = when (selected) {
                             -1 -> "Você escolheu: ${currentPair?.first} > ${currentPair?.second}"
@@ -109,65 +158,52 @@ fun CompareScreen(
                         color = currentColor
                     )
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
 
-                    HorizontalPager(
-                        state = pagerState
-                    ) { page ->
-                        val currentPair = itemPairs[page]
+                    // ÁREA DE SWIPE
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(120.dp)
+                            .background(Color(0xFFE0E0E0)) // cinza claro para visualização
+                            .pointerInput(currentPage) {
+                                detectDragGestures { change, dragAmount ->
+                                    change.consume()
+                                    val (dx, dy) = dragAmount
+                                    val absDx = abs(dx)
+                                    val absDy = abs(dy)
 
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 16.dp)
-                        ) {
-                            Button(
-                                onClick = { respostas[page] = -1 },
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RectangleShape,
-                                border = if (respostas[page] == -1) BorderStroke(2.dp, Color.White) else null,
-                                colors = ButtonDefaults.buttonColors(containerColor = optionColors[-1]!!)
-                            ) {
-                                Text(
-                                    text = "${currentPair.first}\né MAIS importante do que\n${currentPair.second}",
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    modifier = Modifier.padding(8.dp)
-                                )
-                            }
+                                    val isHorizontal = absDx > absDy
+                                    val nextPage = currentPage + 1
 
-                            Button(
-                                onClick = { respostas[page] = 0 },
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RectangleShape,
-                                border = if (respostas[page] == 0) BorderStroke(2.dp, Color.White) else null,
-                                colors = ButtonDefaults.buttonColors(containerColor = optionColors[0]!!)
-                            ) {
-                                Text(
-                                    text = "${currentPair.first}\né IGUAL de importante do que\n${currentPair.second}",
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    modifier = Modifier.padding(8.dp)
-                                )
-                            }
+                                    if (isHorizontal) {
+                                        if (dx > 0) {
+                                            respostas[currentPage] = 1 // Swipe para direita
+                                        } else {
+                                            respostas[currentPage] = -1 // Swipe para esquerda
+                                        }
+                                    } else {
+                                        if (dy < 0) {
+                                            respostas[currentPage] = 0 // Swipe para cima
+                                        } else if (dy > 0) {
+                                            respostas[currentPage] = 0 // Swipe para baixo (adicionado)
+                                        }
+                                    }
 
-                            Button(
-                                onClick = { respostas[page] = 1 },
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RectangleShape,
-                                border = if (respostas[page] == 1) BorderStroke(2.dp, Color.White) else null,
-                                colors = ButtonDefaults.buttonColors(containerColor = optionColors[1]!!)
-                            ) {
-                                Text(
-                                    text = "${currentPair.first}\né MENOS importante do que\n${currentPair.second}",
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    modifier = Modifier.padding(8.dp)
-                                )
-                            }
-                        }
+                                    if (nextPage < total) {
+                                        scope.launch {
+                                            pagerState.animateScrollToPage(nextPage)
+                                        }
+                                    }
+                                }
+                            },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("Deslize aqui para escolher", color = Color.DarkGray)
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Aqui criamos a variável que monitora se todas as respostas foram feitas
                     val allAnswered = respostas.none { it == null }
 
                     Button(
@@ -175,7 +211,6 @@ fun CompareScreen(
                             println("Respostas: $respostas")
                             viewModel.calcularRankingCondorcet(respostas)
                             navController.navigate("ranking")
-                            analyzing = false
                         },
                         enabled = allAnswered,
                         modifier = Modifier.fillMaxWidth(),
