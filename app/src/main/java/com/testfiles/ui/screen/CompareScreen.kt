@@ -30,7 +30,11 @@ fun CompareScreen(
     viewModel: SharedViewModel
 ) {
     val itemPairs by viewModel.itemPairs.collectAsState()
-    val respostas = remember { mutableStateListOf<Int?>().apply { repeat(itemPairs.size) { add(null) } } }
+    val respostas = remember {
+        mutableStateListOf<Int?>().apply {
+            repeat(itemPairs.size) { add(null) }
+        }
+    }
     val scope = rememberCoroutineScope()
 
     Surface(
@@ -43,10 +47,7 @@ fun CompareScreen(
                 .systemBarsPadding()
                 .padding(horizontal = 16.dp)
         ) {
-            Column(
-                modifier = Modifier.fillMaxSize()
-            ) {
-                // Top bar
+            Column(modifier = Modifier.fillMaxSize()) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -77,11 +78,17 @@ fun CompareScreen(
                         1 to Color.Gray
                     )
                     val pagerState = rememberPagerState(initialPage = 0, pageCount = { total })
-
                     val currentPage = pagerState.currentPage
+
+                    // Define resposta como 0 (empate) ao entrar na página se ainda for null
+                    LaunchedEffect(currentPage) {
+                        if (respostas[currentPage] == null) {
+                            respostas[currentPage] = 0
+                        }
+                    }
+
                     val selected = respostas.getOrNull(currentPage)
                     val currentPair = itemPairs.getOrNull(currentPage)
-
                     val currentColor = optionColors[selected] ?: Color.Unspecified
 
                     Text(
@@ -92,23 +99,21 @@ fun CompareScreen(
 
                     Spacer(modifier = Modifier.height(8.dp))
 
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    // SLIDER
                     HorizontalPager(
                         state = pagerState,
-                        modifier = Modifier.weight(1f) // ocupa o espaço disponível
+                        modifier = Modifier.weight(1f)
                     ) { page ->
                         val currentPair = itemPairs[page]
 
-                        Row(
+                        Column(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             Button(
-                                onClick = { respostas[page] = -1 },
-                                modifier = Modifier.weight(1f), // ocupa metade do espaço
+                                onClick = {
+                                    respostas[page] = if (respostas[page] == -1) 0 else -1
+                                },
+                                modifier = Modifier.fillMaxWidth(),
                                 shape = RectangleShape,
                                 border = if (respostas[page] == -1) BorderStroke(2.dp, Color.White) else null,
                                 colors = ButtonDefaults.buttonColors(
@@ -117,7 +122,6 @@ fun CompareScreen(
                                     else
                                         optionColors[-1]!!
                                 )
-
                             ) {
                                 Text(
                                     text = "${currentPair.first}\né MAIS importante do que\n${currentPair.second}",
@@ -127,15 +131,17 @@ fun CompareScreen(
                             }
 
                             Button(
-                                onClick = { respostas[page] = 1 },
-                                modifier = Modifier.weight(1f), // ocupa metade do espaço
+                                onClick = {
+                                    respostas[page] = if (respostas[page] == 1) 0 else 1
+                                },
+                                modifier = Modifier.fillMaxWidth(),
                                 shape = RectangleShape,
                                 border = if (respostas[page] == 1) BorderStroke(2.dp, Color.White) else null,
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = if (respostas[page] == 1)
                                         MaterialTheme.colorScheme.primary
                                     else
-                                        optionColors[-1]!!
+                                        optionColors[1]!!
                                 )
                             ) {
                                 Text(
@@ -150,8 +156,8 @@ fun CompareScreen(
                     Text(
                         text = when (selected) {
                             -1 -> "Você escolheu: ${currentPair?.first} > ${currentPair?.second}"
-                            0 -> "Você escolheu: ${currentPair?.first} = ${currentPair?.second}"
                             1 -> "Você escolheu: ${currentPair?.first} < ${currentPair?.second}"
+                            0 -> "Você escolheu: ${currentPair?.first} = ${currentPair?.second}"
                             else -> "Nenhuma escolha feita."
                         },
                         modifier = Modifier.align(Alignment.CenterHorizontally),
@@ -160,12 +166,11 @@ fun CompareScreen(
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    // ÁREA DE SWIPE
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(120.dp)
-                            .background(Color(0xFFE0E0E0)) // cinza claro para visualização
+                            .background(Color(0xFFE0E0E0))
                             .pointerInput(currentPage) {
                                 detectDragGestures { change, dragAmount ->
                                     change.consume()
@@ -174,19 +179,22 @@ fun CompareScreen(
                                     val absDy = abs(dy)
 
                                     val isHorizontal = absDx > absDy
+                                    val isVertical = absDy > absDx
                                     val nextPage = currentPage + 1
 
                                     if (isHorizontal) {
                                         if (dx > 0) {
-                                            respostas[currentPage] = 1 // Swipe para direita
+                                            respostas[currentPage] = 0 // direita
                                         } else {
-                                            respostas[currentPage] = -1 // Swipe para esquerda
+                                            respostas[currentPage] = 0 // esquerda
                                         }
-                                    } else {
+                                    }
+
+                                    if (isVertical) {
                                         if (dy < 0) {
-                                            respostas[currentPage] = 0 // Swipe para cima
-                                        } else if (dy > 0) {
-                                            respostas[currentPage] = 0 // Swipe para baixo (adicionado)
+                                            respostas[currentPage] = -1 // cima
+                                        } else {
+                                            respostas[currentPage] = 1 // baixo
                                         }
                                     }
 
@@ -208,8 +216,9 @@ fun CompareScreen(
 
                     Button(
                         onClick = {
-                            println("Respostas: $respostas")
-                            viewModel.calcularRankingCondorcet(respostas)
+                            val finalRespostas = respostas.map { it ?: 0 }
+                            println("Respostas: $finalRespostas")
+                            viewModel.calcularRankingCondorcet(finalRespostas)
                             navController.navigate("ranking")
                         },
                         enabled = allAnswered,
