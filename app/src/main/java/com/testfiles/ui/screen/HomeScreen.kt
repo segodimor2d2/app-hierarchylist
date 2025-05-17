@@ -4,6 +4,7 @@ import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -28,6 +29,7 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -184,15 +186,20 @@ fun SolicitarAcessoCard(
 ) {
     Card(
         modifier = modifier
-            .fillMaxWidth(0.9f), // define uma largura menor para centralizar melhor
+            .fillMaxWidth(0.9f),
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(8.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.onSurface),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceDim
+        ),
     ) {
         Column(modifier = Modifier.padding(24.dp)) {
             Text(
                 text = "Solicitação de Acesso",
                 style = MaterialTheme.typography.titleLarge,
-                color = Color.White
+                color = MaterialTheme.colorScheme.primary
+
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
@@ -225,6 +232,7 @@ fun FileGridView(
 ) {
     LazyVerticalGrid(
         columns = GridCells.Fixed(6), // ou use Adaptive(100.dp)
+        //columns = GridCells.Adaptive(minSize = 96.dp),
         modifier = Modifier
             .fillMaxWidth()
             .fillMaxHeight()
@@ -232,7 +240,7 @@ fun FileGridView(
         items(mdFiles) { (name, uri) ->
             val isDone = name.startsWith("done_")
             val icon = if (isDone) Icons.Default.Done else Icons.Filled.List
-            val iconColor = if (isDone) MaterialTheme.colorScheme.secondary else Color.Gray
+            val iconColor = if (isDone) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary
 
             Column(
                 modifier = Modifier
@@ -245,7 +253,7 @@ fun FileGridView(
             ) {
                 Icon(
                     imageVector = icon,
-                    contentDescription = null,
+                    contentDescription = name,
                     tint = iconColor,
                     modifier = Modifier
                         .size(48.dp)
@@ -293,7 +301,11 @@ fun CreateListButton(
         },
         modifier = Modifier
             .fillMaxWidth(),
-        shape = RoundedCornerShape(4.dp),
+        shape = RoundedCornerShape(8.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = MaterialTheme.colorScheme.primary,
+            contentColor = MaterialTheme.colorScheme.onPrimary
+        )
     ) {
         Text(
             text = "Criar uma lista",

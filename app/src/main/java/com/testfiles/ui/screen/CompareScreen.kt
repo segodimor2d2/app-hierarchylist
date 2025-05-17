@@ -2,28 +2,53 @@ package com.testfiles.ui.screen
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.testfiles.viewmodel.SharedViewModel
-import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.ui.draw.clip
 import kotlinx.coroutines.launch
 import kotlin.math.abs
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -75,13 +100,26 @@ fun CompareScreen(
                         )
                     }
 
+                    Spacer(modifier = Modifier.height(26.dp))
+
                     Text(
-                        text = "Qual item é mais importante?",
-                        style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier.align(Alignment.CenterHorizontally)
+                        text = "Qual item é o mais importante?",
+                        style = MaterialTheme.typography.headlineMedium,
+                        modifier = Modifier.align(Alignment.CenterHorizontally),
+                        textAlign = TextAlign.Center
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Text(
+                        text = "Se os dois forem igualmente importantes, selecione ambos.",
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.outline,
+                        modifier = Modifier
+                            .fillMaxWidth(),
+                        textAlign = TextAlign.Center
                     )
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(26.dp))
 
                     val pagerState = rememberPagerState(initialPage = 0, pageCount = { total })
                     val currentPage = pagerState.currentPage
@@ -92,12 +130,6 @@ fun CompareScreen(
                             respostas[currentPage] = 0
                         }
                     }
-
-                    val selected = respostas.getOrNull(currentPage)
-                    val currentPair = itemPairs.getOrNull(currentPage)
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
 
                     Spacer(modifier = Modifier.height(8.dp))
 
@@ -118,52 +150,40 @@ fun CompareScreen(
                                 modifier = Modifier.fillMaxWidth()
                                 .padding(horizontal = 4.dp),
                                 //.padding(bottom = 136.dp), // 104dp botão + 48dp de padding
-                                verticalArrangement = Arrangement.spacedBy(22.dp)
+                                verticalArrangement = Arrangement.spacedBy(16.dp)
                             ) {
-                                Text(
-                                    text = "A: ${currentPair.first}\nB: ${currentPair.second}",
-                                    style = MaterialTheme.typography.titleMedium,
-                                )
                                 Text(
                                     text = "${currentPage + 1} de $total",
                                     style = MaterialTheme.typography.titleMedium,
-                                    modifier = Modifier.align(Alignment.End)
+                                    modifier = Modifier
+                                        .align(Alignment.End)
+                                        .padding(0.dp, 0.dp, 16.dp, 0.dp)
                                 )
                                 Button(
                                     onClick = {
                                         respostas[page] = if (respostas[page] == -1) 0 else -1
                                     },
-                                    modifier = Modifier.fillMaxWidth().align(Alignment.CenterHorizontally),
-                                    shape = RoundedCornerShape(4.dp),
-                                    border = if (respostas[page] == -1) BorderStroke(2.dp, Color.White) else null,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .align(Alignment.CenterHorizontally),
+                                    shape = RoundedCornerShape(50.dp),
+                                    border = if (respostas[page] == -1) null else BorderStroke(2.dp, MaterialTheme.colorScheme.primary),
                                     colors = ButtonDefaults.buttonColors(
                                         containerColor = if (respostas[page] == -1)
                                             MaterialTheme.colorScheme.primary
                                         else
-                                            MaterialTheme.colorScheme.secondary
-                                            //optionColors[-1]!!
+                                            Color.Transparent, // fundo transparente para outlined
+                                        contentColor = if (respostas[page] == -1)
+                                            MaterialTheme.colorScheme.onPrimary
+                                        else
+                                            MaterialTheme.colorScheme.primary // cor do texto igual a cor da borda
                                     )
-                                ) {
-                                    Column(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalAlignment = Alignment.CenterHorizontally
-                                    ) {
-                                        Text(
-                                            text = currentPair.first,
-                                            style = MaterialTheme.typography.bodyLarge,
-                                            modifier = Modifier.padding(4.dp)
-                                        )
-                                        Text(
-                                            text = "é mais importante do que",
-                                            style = MaterialTheme.typography.bodySmall,
-                                            modifier = Modifier.padding(4.dp)
-                                        )
-                                        Text(
-                                            text = "${currentPair.second}?",
-                                            style = MaterialTheme.typography.bodyLarge,
-                                            modifier = Modifier.padding(4.dp)
-                                        )
-                                    }
+                                ){
+                                    Text(
+                                        text = currentPair.first,
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        modifier = Modifier.padding(16.dp)
+                                    )
                                 }
 
                                 Button(
@@ -171,73 +191,65 @@ fun CompareScreen(
                                         respostas[page] = if (respostas[page] == 1) 0 else 1
                                     },
                                     modifier = Modifier.fillMaxWidth().align(Alignment.CenterHorizontally),
-                                    shape = RoundedCornerShape(4.dp),
-                                    border = if (respostas[page] == 1) BorderStroke(2.dp, Color.White) else null,
+                                    shape = RoundedCornerShape(50.dp),
+                                    border = if (respostas[page] == 1) null else BorderStroke(2.dp, MaterialTheme.colorScheme.primary),
                                     colors = ButtonDefaults.buttonColors(
                                         containerColor = if (respostas[page] == 1)
                                             MaterialTheme.colorScheme.primary
                                         else
-                                            MaterialTheme.colorScheme.secondary
-                                            //optionColors[1]!!
-                                            //Color(0xFFE0E0E0)
-                                    )
+                                            Color.Transparent, // fundo transparente para outlined
+                                        contentColor = if (respostas[page] == 1)
+                                            MaterialTheme.colorScheme.onPrimary
+                                        else
+                                            MaterialTheme.colorScheme.primary // cor do texto igual a cor da borda
+                                    ),
                                 ) {
-                                    Column(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalAlignment = Alignment.CenterHorizontally
-                                    ) {                                        Text(
+                                    Text(
                                         text = currentPair.second,
                                         style = MaterialTheme.typography.bodyLarge,
-                                        modifier = Modifier.padding(4.dp)
+                                        modifier = Modifier.padding(16.dp)
                                     )
-                                        Text(
-                                            text = "é mais importante do que",
-                                            style = MaterialTheme.typography.bodySmall,
-                                            modifier = Modifier.padding(4.dp)
-                                        )
-                                        Text(
-                                            text = "${currentPair.first}?",
-                                            style = MaterialTheme.typography.bodyLarge,
-                                            modifier = Modifier.padding(4.dp)
-                                        )
-                                    }
                                 }
                             }
+                        }
+
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 16.dp),
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        repeat(total) { index ->
+                            val isSelected = index == pagerState.currentPage
+                            val color = if (isSelected) MaterialTheme.colorScheme.primary else Color.Gray.copy(alpha = 0.3f)
+                            Box(
+                                modifier = Modifier
+                                    .padding(4.dp)
+                                    .size(if (isSelected) 10.dp else 8.dp)
+                                    .clip(RoundedCornerShape(percent = 50))
+                                    .background(color)
+                            )
                         }
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .heightIn(min = 80.dp) // Garante uma altura mínima para evitar "pulos"
-                            .clickable { navController.popBackStack() }
-                            .padding(vertical = 16.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = when (selected) {
-                                -1 -> "${currentPair?.first}\né mais importante do que\n${currentPair?.second}?"
-                                1 -> "${currentPair?.second}\né mais importante do que\n${currentPair?.first}?"
-                                0 -> "Os dois são igual de importantes?"
-                                else -> "Nenhuma escolha feita."
-                            },
-                            color = MaterialTheme.colorScheme.primary,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(12.dp))
 
                     if (showSweepSpace) {
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(180.dp)
-                                .clip(RoundedCornerShape(4.dp))
-                                .background(Color(0xFF2B2D30))
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(MaterialTheme.colorScheme.background)
+                                .border(
+                                    width = 1.dp,
+                                    color = Color.Gray.copy(alpha = 0.05f), // borda sutil, quase do tom do fundo
+                                    shape = RoundedCornerShape(8.dp)
+                                )
                                 .pointerInput(currentPage) {
                                     detectDragGestures { change, dragAmount ->
                                         change.consume()
@@ -277,7 +289,7 @@ fun CompareScreen(
                             Text(
                                 text = "Deslize aqui para escolher",
                                 style = MaterialTheme.typography.titleMedium,
-                                color = Color.DarkGray,
+                                color = Color.Gray.copy(alpha = 0.05f),
                                 modifier = Modifier.padding(vertical = 8.dp)
                             )
                         }
@@ -303,12 +315,9 @@ fun CompareScreen(
                             navController.navigate("ranking")
                         },
                         enabled = allAnswered,
-                        modifier = Modifier
-                            .fillMaxWidth(),
-                        shape = RoundedCornerShape(4.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = if (allAnswered) MaterialTheme.colorScheme.primary else Color.Gray
-                        )
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(8.dp),
+                        colors = ButtonDefaults.buttonColors()
                     ) {
                         Text(
                             text = "Processar",

@@ -2,6 +2,7 @@ package com.testfiles.ui.screen
 
 import android.content.Context
 import android.net.Uri
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -92,14 +93,17 @@ fun EditScreen(navController: NavController, viewModel: SharedViewModel) {
                                     color = if (it.startsWith("Erro")) MaterialTheme.colorScheme.error
                                     else MaterialTheme.colorScheme.primary
                                 )
-                            } ?: Text("Digite algo")
+                            } ?: Text(
+                                    text = "Digite algo",
+                                    color = MaterialTheme.colorScheme.primary
+                                )
                         },
-                        shape = RoundedCornerShape(4.dp),
+                        shape = RoundedCornerShape(8.dp),
                         colors = TextFieldDefaults.colors(
                             focusedTextColor = MaterialTheme.colorScheme.onSurface,
                             unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                            focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                            focusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
                             focusedIndicatorColor = Color.Transparent,
                             unfocusedIndicatorColor = Color.Transparent,
                             cursorColor = MaterialTheme.colorScheme.primary
@@ -182,7 +186,7 @@ fun EditButtons(
                 contentColor = MaterialTheme.colorScheme.onPrimary
             ),
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(4.dp),
+            shape = RoundedCornerShape(8.dp),
         ) {
             Text(
                 text = "Comparar",
@@ -199,12 +203,12 @@ fun EditButtons(
                 val result = saveFileContent(context, fileUri, fileContent)
                 onSave(result)
             },
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.secondary,
-                contentColor = MaterialTheme.colorScheme.onSecondary
-            ),
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(4.dp),
+            shape = RoundedCornerShape(8.dp),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline), // opcional (padrão do Material 3)
+            colors = ButtonDefaults.outlinedButtonColors(
+                contentColor = MaterialTheme.colorScheme.primary // cor do texto/ícone
+            ),
         ) {
             Text(
                 text = "Salvar Alterações",
