@@ -1,5 +1,6 @@
 package com.testfiles.ui.screen
 
+import androidx.compose.animation.expandHorizontally
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -122,7 +123,7 @@ fun CompareScreen(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(horizontal = 4.dp),
-                                verticalArrangement = Arrangement.spacedBy(16.dp)
+                                verticalArrangement = Arrangement.spacedBy(22.dp)
                             ) {
                                 Text(
                                     text = "${page + 1} de $total",
@@ -181,24 +182,46 @@ fun CompareScreen(
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(16.dp))
 
-                    Row(
+                    Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(top = 16.dp),
-                        horizontalArrangement = Arrangement.Center
+                            .pointerInput(pagerState.currentPage) {
+                                detectDragGestures { change, dragAmount ->
+                                    change.consumeAllChanges()
+                                    val (dx, dy) = dragAmount
+                                    if (abs(dx) > abs(dy)) {
+                                        val targetPage = when {
+                                            dx < -10 -> pagerState.currentPage + 1
+                                            dx > 10 -> pagerState.currentPage - 1
+                                            else -> pagerState.currentPage
+                                        }.coerceIn(0, total - 1)
+
+                                        if (targetPage != pagerState.currentPage) {
+                                            scope.launch {
+                                                pagerState.animateScrollToPage(targetPage)
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                     ) {
-                        repeat(total) { index ->
-                            val isSelected = index == pagerState.currentPage
-                            val color = if (isSelected) MaterialTheme.colorScheme.primary else Color.Gray.copy(alpha = 0.3f)
-                            Box(
-                                modifier = Modifier
-                                    .padding(4.dp)
-                                    .size(if (isSelected) 10.dp else 8.dp)
-                                    .clip(RoundedCornerShape(percent = 50))
-                                    .background(color)
-                            )
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth(),
+                            horizontalArrangement = Arrangement.Center,
+                        ) {
+                            repeat(total) { index ->
+                                val isSelected = index == pagerState.currentPage
+                                val color = if (isSelected) MaterialTheme.colorScheme.primary else Color.Gray.copy(alpha = 0.3f)
+                                Box(
+                                    modifier = Modifier
+                                        .padding(horizontal = 4.dp, vertical = 22.dp)
+                                        .size(if (isSelected) 10.dp else 8.dp)
+                                        .clip(RoundedCornerShape(percent = 50))
+                                        .background(color)
+                                )
+                            }
                         }
                     }
 
