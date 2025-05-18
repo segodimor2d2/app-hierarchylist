@@ -225,53 +225,57 @@ fun CompareScreen(
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                }
 
-                    if (showSweepSpace) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(180.dp)
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(MaterialTheme.colorScheme.background)
-                                .border(1.dp, Color.Gray.copy(alpha = 0.05f), RoundedCornerShape(8.dp))
-                                .pointerInput(currentPage) {
-                                    detectDragGestures { change, dragAmount ->
-                                        change.consumeAllChanges()
-                                        val (dx, dy) = dragAmount
-                                        val absDx = abs(dx)
-                                        val absDy = abs(dy)
 
-                                        val isHorizontal = absDx > absDy
-                                        val isVertical = absDy > absDx
-                                        val nextPage = currentPage + 1
+                // SweepSpace fixo acima do botão
+                if (showSweepSpace) {
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .fillMaxWidth()
+                            .padding(bottom = 90.dp) // espaço entre sweepSpace e botão
+                            .height(180.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(MaterialTheme.colorScheme.background)
+                            .border(1.dp, Color.Gray.copy(alpha = 0.05f), RoundedCornerShape(8.dp))
+                            .pointerInput(pagerState.currentPage) {
+                                detectDragGestures { change, dragAmount ->
+                                    change.consumeAllChanges()
+                                    val (dx, dy) = dragAmount
+                                    val absDx = abs(dx)
+                                    val absDy = abs(dy)
 
-                                        if (isHorizontal) {
-                                            respostas[currentPage] = Pair(true, true)
-                                        }
+                                    val isHorizontal = absDx > absDy
+                                    val isVertical = absDy > absDx
+                                    val nextPage = pagerState.currentPage + 1
 
-                                        if (isVertical) {
-                                            respostas[currentPage] = if (dy < 0) Pair(true, false) else Pair(false, true)
-                                        }
+                                    if (isHorizontal) {
+                                        respostas[pagerState.currentPage] = Pair(true, true)
+                                    }
 
-                                        if (nextPage < total) {
-                                            scope.launch {
-                                                pagerState.animateScrollToPage(nextPage)
-                                            }
+                                    if (isVertical) {
+                                        respostas[pagerState.currentPage] = if (dy < 0) Pair(true, false) else Pair(false, true)
+                                    }
+
+                                    if (nextPage < total) {
+                                        scope.launch {
+                                            pagerState.animateScrollToPage(nextPage)
                                         }
                                     }
-                                },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = "Deslize aqui para escolher",
-                                style = MaterialTheme.typography.titleMedium,
-                                color = Color.Gray.copy(alpha = 0.05f),
-                                modifier = Modifier.padding(vertical = 8.dp)
-                            )
-                        }
+                                }
+                            },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "Deslize aqui para escolher",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = Color.Gray.copy(alpha = 0.05f),
+                            modifier = Modifier.padding(vertical = 8.dp)
+                        )
                     }
                 }
+
 
                 // Botão fixo no final da tela
                 Box(
