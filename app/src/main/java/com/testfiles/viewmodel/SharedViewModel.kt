@@ -7,32 +7,32 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import java.io.OutputStreamWriter
 
-// ✅ Representa um par de itens a ser comparado
+// Representa um par de itens a ser comparado no ranking
 data class ItemPair(val first: String, val second: String)
 
 class SharedViewModel : ViewModel() {
-    // Estado do arquivo selecionado
+
+    // URI do arquivo selecionado pelo usuário
     private val _selectedFileUri = MutableStateFlow<Uri?>(null)
     val selectedFileUri: StateFlow<Uri?> = _selectedFileUri.asStateFlow()
 
-    // Estado dos dados processados
+    // Conteúdo processado do arquivo selecionado
     private val _processedData = MutableStateFlow<String?>(null)
     val processedData: StateFlow<String?> = _processedData.asStateFlow()
 
-    // Estado de mensagens
+    // Mensagens para a UI (erros, status, etc)
     private val _message = MutableStateFlow<String?>(null)
     val message: StateFlow<String?> = _message.asStateFlow()
 
-    // Estado de loading
+    // Estado de carregamento para mostrar progress indicators
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
-    // ✅ Lista de itens extraídos de processedData
+    // Lista de itens extraídos do conteúdo processado, uma linha por item
     val itemList: StateFlow<List<String>> = processedData
         .map { data ->
-            data?.split("\n")
+            data?.lines()
                 ?.map { it.trim() }
                 ?.filter { it.isNotEmpty() }
                 ?: emptyList()
@@ -43,7 +43,7 @@ class SharedViewModel : ViewModel() {
             initialValue = emptyList()
         )
 
-    // ✅ Geração dos pares únicos de comparação
+    // Lista dos pares únicos para comparação Condorcet
     val itemPairs: StateFlow<List<ItemPair>> = itemList
         .map { items ->
             val pairs = mutableListOf<ItemPair>()
@@ -60,21 +60,26 @@ class SharedViewModel : ViewModel() {
             initialValue = emptyList()
         )
 
-    // ✅ Estado do ranking Condorcet (resultado final)
+    // Ranking final: pares de item e pontuação ordenados
     private val _ranking = MutableStateFlow<List<Pair<String, Int>>>(emptyList())
     val ranking: StateFlow<List<Pair<String, Int>>> = _ranking.asStateFlow()
 
+    // Seleciona arquivo (URI)
     fun selectFile(uri: Uri) {
         _selectedFileUri.value = uri
     }
 
+    // Atualiza o conteúdo processado
     fun processData(data: String) {
         viewModelScope.launch {
             _processedData.value = data
         }
     }
 
-    // ✅ Lógica de ranking baseada nas respostas do usuário
+    /**
+     * Calcula o ranking Condorcet baseado nas respostas do usuário.
+     * respostas: lista com valores -1 (primeiro vence), 0 (empate), 1 (segundo vence)
+     */
     fun calcularRankingCondorcet(respostas: List<Int?>) {
         val placar = mutableMapOf<String, Int>()
         val pares = itemPairs.value
@@ -102,47 +107,46 @@ class SharedViewModel : ViewModel() {
             .map { it.toPair() }
     }
 
-    // Função para criar cópia com prefixo "done_"
+    /**
+     * Cria uma cópia do arquivo com prefixo "done_" no mesmo diretório com o ranking formatado.
+     */
     fun createDoneFileCopy(context: Context, originalUri: Uri, ranking: List<Pair<String, Int>>) {
         _isLoading.value = true
         viewModelScope.launch {
             try {
-                // Extrai o caminho base do URI
-                val uriString = originalUri.toString()
-                val treeUri = if (uriString.contains("/tree/")) {
-                    Uri.parse(uriString.substringBefore("/document/"))
-                } else {
-                    originalUri
-                }
-
+                // Obtém a Uri da pasta pai para salvar o arquivo
+                val treeUri = getTreeUriFromDocumentUri(originalUri)
                 val treeFolder = DocumentFile.fromTreeUri(context, treeUri)
-                    ?: throw Exception("Não foi possível acessar a pasta")
+                    ?: throw Exception("Não foi possível acessar a pasta do arquivo")
 
+                // Nome do arquivo original para prefixar com "done_"
                 val originalName = originalUri.lastPathSegment
                     ?.substringAfterLast("%3A")
                     ?.substringAfterLast("%2F")
-                    ?.substringAfterLast("/")  // Fallback para URIs com formato diferente
+                    ?.substringAfterLast("/")
                     ?.replace("%20", " ")
                     ?: "ranking_${System.currentTimeMillis()}.md"
 
                 val newName = "done_$originalName"
 
-                // Cria e escreve no novo arquivo
-                val newFile = treeFolder.createFile("text/markdown", newName)
-                    ?: throw Exception("Falha ao criar arquivo")
+                // Remove arquivo antigo se existir
+                treeFolder.findFile(newName)?.delete()
 
-                newFile.uri?.let { newUri ->
-                    context.contentResolver.openOutputStream(newUri)?.use { output ->
-                        val content = buildString {
-                            append("# Ranking Concluído\n\n")
-                            ranking.forEachIndexed { index, (item, score) ->
-                                append("${index + 1}. $item ($score pts)\n")
-                            }
+                // Cria novo arquivo
+                val newFile = treeFolder.createFile("text/markdown", newName)
+                    ?: throw Exception("Falha ao criar o arquivo")
+
+                // Escreve conteúdo formatado no novo arquivo
+                context.contentResolver.openOutputStream(newFile.uri)?.use { output ->
+                    val content = buildString {
+                        append("# Ranking Concluído\n\n")
+                        ranking.forEachIndexed { index, (item, score) ->
+                            append("${index + 1}. $item ($score pts)\n")
                         }
-                        output.write(content.toByteArray())
-                        _message.value = "$newName"
                     }
-                } ?: throw Exception("URI inválido para o novo arquivo")
+                    output.write(content.toByteArray())
+                    _message.value = "Arquivo salvo como $newName"
+                }
             } catch (e: Exception) {
                 _message.value = "Erro ao criar cópia: ${e.localizedMessage}"
             } finally {
@@ -151,7 +155,34 @@ class SharedViewModel : ViewModel() {
         }
     }
 
-    // Função para ler conteúdo do arquivo
+    /**
+     * Função auxiliar para extrair a URI da pasta pai (tree Uri) a partir de um DocumentUri.
+     * Pode ser necessária para manipular arquivos com Storage Access Framework.
+     */
+    private fun getTreeUriFromDocumentUri(documentUri: Uri): Uri {
+        val uriString = documentUri.toString()
+        return if (uriString.contains("/tree/")) {
+            Uri.parse(uriString.substringBefore("/document/"))
+        } else {
+            documentUri
+        }
+    }
+
+    /**
+     * Salva o ranking no arquivo, criando uma cópia "done_".
+     */
+    fun saveRanking(context: Context, ranking: List<Pair<String, Int>>) {
+        val uri = _selectedFileUri.value
+        if (uri == null) {
+            _message.value = "Nenhum arquivo selecionado para salvar"
+            return
+        }
+        createDoneFileCopy(context, uri, ranking)
+    }
+
+    /**
+     * Lê o conteúdo do arquivo selecionado.
+     */
     fun readFileContent(context: Context, uri: Uri) {
         _isLoading.value = true
         viewModelScope.launch {
@@ -171,7 +202,7 @@ class SharedViewModel : ViewModel() {
         }
     }
 
-    // Limpar mensagens
+    // Limpa as mensagens da UI
     fun clearMessage() {
         _message.value = null
     }

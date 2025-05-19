@@ -34,7 +34,7 @@ fun CompareScreen(
     viewModel: SharedViewModel
 ) {
     val itemPairs by viewModel.itemPairs.collectAsState()
-    var showSweepSpace by remember { mutableStateOf(false) }
+    var showSweepSpace by remember { mutableStateOf(true) }
 
     val respostas = remember {
         mutableStateListOf<Pair<Boolean, Boolean>?>().apply {
