@@ -857,6 +857,20 @@ O método que você está descrevendo, que usa os valores **-1, 0 e 1** para com
 Analytic Hierarchy Process - AHP:
 Processo de Análise Hierárquica, é um método de tomada de decisão que compara alternativas duas a duas e calcula o peso ou a importância relativa de cada uma.
 
+eu quero duplicar ui/screen/CompareScreen.kt para ao escolher MBC ou AHP e eu possa entrar no processamento de Humeraquia usando o metodo Analytic Hierarchy Process - AHP
+
+
+---
+$$$$
+
+
+eu quero criar uma area cuadrada touch,
+a area horisontal pode ser dividida em 3 partes,
+a ezquerda será a opçao A,
+no meio seria igualmente importantes
+a direita será a opçao B,
+pode ser dividida em 3 partes,
+ao deslizar na area
 
 ---
 $$$$
@@ -876,7 +890,8 @@ adb shell am start -n com.rec.termuxsbs/.MainActivity
 e /home/segodimo/05android/05hierarchylist/app/src/main/java/com/testfiles/MainActivity.kt
 e /home/segodimo/05android/05hierarchylist/app/src/main/AndroidManifest.xml
 e app/src/main/java/com/testfiles/viewmodel/SharedViewModel.kt
-e app/src/main/java/com/testfiles/ui/screen/EditScreen.kt
+e
+app/src/main/java/com/testfiles/ui/screen/EditScreen.kt
 
 ```
 

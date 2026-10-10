@@ -264,7 +264,7 @@ fun EditButtons(
                 val result = saveFileContent(context, fileUri, fileContent)
                 onSave(result)
                 viewModel.processData(fileContent)
-                navController.navigate("compare")
+                navController.navigate(if (viewModel.varMetodo == "ahp") "compare_ahp" else "compare")
             },
             colors = ButtonDefaults.buttonColors(
                 containerColor = MaterialTheme.colorScheme.primary,

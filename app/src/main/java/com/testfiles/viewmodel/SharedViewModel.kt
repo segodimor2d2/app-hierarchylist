@@ -10,6 +10,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import com.testfiles.util.calculateAhpWeights
+import java.util.Locale
 
 // Representa um par de itens a ser comparado no ranking
 data class ItemPair(val first: String, val second: String)
@@ -73,8 +75,8 @@ class SharedViewModel : ViewModel() {
         )
 
     // Ranking final: pares de item e pontuação ordenados
-    private val _ranking = MutableStateFlow<List<Pair<String, Int>>>(emptyList())
-    val ranking: StateFlow<List<Pair<String, Int>>> = _ranking.asStateFlow()
+    private val _ranking = MutableStateFlow<List<Pair<String, Double>>>(emptyList())
+    val ranking: StateFlow<List<Pair<String, Double>>> = _ranking.asStateFlow()
 
     // Seleciona arquivo (URI)
     fun selectFile(uri: Uri) {
@@ -116,13 +118,23 @@ class SharedViewModel : ViewModel() {
 
         _ranking.value = placar.entries
             .sortedByDescending { it.value }
-            .map { it.toPair() }
+            .map { it.key to it.value.toDouble() }
     }
+
+    fun calcularRankingAhp(respostas: List<Double>) {
+        val items = itemList.value
+        val weights = calculateAhpWeights(items.size, respostas)
+        _ranking.value = items.zip(weights).sortedByDescending { it.second }
+    }
+
+    fun formatRankingScore(score: Double): String =
+        if (varMetodo == "ahp") String.format(Locale.getDefault(), "%.2f%%", score * 100)
+        else "${score.toInt()} pts"
 
     /**
      * Cria uma cópia do arquivo com prefixo "done_" no mesmo diretório com o ranking formatado.
      */
-    fun createDoneFileCopy(context: Context, originalUri: Uri, ranking: List<Pair<String, Int>>) {
+    fun createDoneFileCopy(context: Context, originalUri: Uri, ranking: List<Pair<String, Double>>) {
         _isLoading.value = true
         viewModelScope.launch {
             try {
@@ -153,7 +165,7 @@ class SharedViewModel : ViewModel() {
                     val content = buildString {
                         append("# Ranking Concluído\n\n")
                         ranking.forEachIndexed { index, (item, score) ->
-                            append("${index + 1}. $item ($score pts)\n")
+                            append("${index + 1}. $item (${formatRankingScore(score)})\n")
                         }
                     }
                     output.write(content.toByteArray())
@@ -183,7 +195,7 @@ class SharedViewModel : ViewModel() {
     /**
      * Salva o ranking no arquivo, criando uma cópia "done_".
      */
-    fun saveRanking(context: Context, ranking: List<Pair<String, Int>>) {
+    fun saveRanking(context: Context, ranking: List<Pair<String, Double>>) {
         val uri = _selectedFileUri.value
         if (uri == null) {
             _message.value = "Nenhum arquivo selecionado para salvar"

@@ -106,7 +106,7 @@ fun RankingScreen(navController: NavController, viewModel: SharedViewModel) {
                 }
 
 
-                DraggableRankingList(rankingState) { from, to ->
+                DraggableRankingList(rankingState, viewModel::formatRankingScore) { from, to ->
                     val mutableList = rankingState.toMutableList()
                     val item = mutableList.removeAt(from)
                     mutableList.add(to, item)
@@ -182,7 +182,8 @@ fun RankingScreen(navController: NavController, viewModel: SharedViewModel) {
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun DraggableRankingList(
-    ranking: List<Pair<String, Int>>,
+    ranking: List<Pair<String, Double>>,
+    formatScore: (Double) -> String,
     onMove: (Int, Int) -> Unit
 ) {
     val state = rememberReorderableLazyListState(onMove = { from, to ->
@@ -224,7 +225,7 @@ fun DraggableRankingList(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "${index + 1}. $item (${score} pts)",
+                            text = "${index + 1}. $item (${formatScore(score)})",
                             style = MaterialTheme.typography.bodyLarge,
                             modifier = Modifier.weight(1f)
                         )

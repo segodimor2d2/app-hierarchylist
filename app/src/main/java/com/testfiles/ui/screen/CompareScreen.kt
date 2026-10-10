@@ -87,7 +87,7 @@ fun CompareScreen(
                         }
 
                         Text(
-                            text = "Proceso de Hierarquia",
+                            text = "Proceso de Hierarquia MBC",
                             style = MaterialTheme.typography.titleLarge,
                         )
                     }
