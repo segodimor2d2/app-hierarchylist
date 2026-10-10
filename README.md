@@ -102,6 +102,7 @@ Suponha que você queira hierarquizar 3 itens (A, B, C) com base em preferência
 - A partir disso, calculam-se os pesos relativos (autovetores) para ordenar A, B, C.
 
 ---
+qual é a diferença entre Método de Borda e Método de Borda Modificado
 
 # **Método de Borda Modificado** ou **Matriz de Condorcet com pesos simplificados**.
 
@@ -162,6 +163,9 @@ Essas comparações são registradas em uma **matriz de dominância**, e a pontu
 - **Método de Condorcet**: Usa comparações par a par para definir um "vencedor" que domina todos.  
 - **Método de Copeland**: Soma vitórias e derrotas nas comparações (similar, mas conta vitórias totais).  
 - **Método Borda Clássico**: Rankeia itens por posição, não só por comparação binária.  
+# **Método de Borda Modificado** ou **Matriz de Condorcet com pesos simplificados**.
+# **Método de Análise Hierárquica (Analytic Hierarchy Process - AHP)**.
+
 
 ---
 
@@ -469,3 +473,414 @@ fun TwoButtonsScreen() {
 ```
 
 Lembre-se de importar `androidx.compose.animation.AnimatedVisibility` se usar esta versão.
+
+---
+$$$$
+
+Sim. São métodos diferentes, mas relacionados. Todos podem ser utilizados para ordenar alternativas, estabelecer prioridades ou escolher a melhor opção. A principal diferença está em como cada método calcula a preferência e determina o vencedor.
+
+Uma distinção importante: Condorcet e Copeland trabalham com comparações par a par; Borda utiliza posições em rankings; AHP utiliza comparações de intensidade de preferência.
+
+## 1. Comparação dos métodos
+
+| Método                                      | Como funciona                                                        | Resultado                                        |
+| ------------------------------------------- | -------------------------------------------------------------------- | ------------------------------------------------ |
+| Condorcet                                   | Compara cada alternativa contra todas as outras                      | Vencedor que derrota todas as demais, se existir |
+| Copeland                                    | Conta vitórias e derrotas nas comparações par a par                  | Ranking por saldo de vitórias                    |
+| Borda Clássico                              | Atribui pontos conforme a posição de cada alternativa                | Ranking por soma de pontos                       |
+| Borda Modificado                            | Adapta a pontuação do Borda conforme regras específicas              | Ranking ponderado ou ajustado                    |
+| Matriz de Condorcet com pesos simplificados | Atribui pontos ou pesos aos resultados das comparações               | Ranking por pontuação                            |
+| AHP                                         | Compara alternativas ou critérios usando intensidades de preferência | Pesos relativos e ranking de prioridades         |
+
+Observação: "Borda Modificado" e "Matriz de Condorcet com pesos simplificados" não identificam necessariamente um único método padronizado. É preciso definir a fórmula utilizada.
+
+## 2. Exemplo prático
+
+Imagine que precisamos escolher entre três projetos:
+
+- A — Desenvolver aplicativo Android
+- B — Desenvolver servidor backend
+- C — Desenvolver interface web
+
+Cinco pessoas classificam os projetos por preferência.
+
+| Pessoa | 1º lugar | 2º lugar | 3º lugar |
+| ------ | -------- | -------- | -------- |
+| 1      | A        | B        | C        |
+| 2      | A        | B        | C        |
+| 3      | B        | C        | A        |
+| 4      | B        | C        | A        |
+| 5      | C        | A        | B        |
+
+### Condorcet
+
+Comparamos os projetos dois a dois.
+
+| Comparação | Votos      | Vencedor |
+| ---------- | ---------- | -------- |
+| A × B      | A: 3, B: 2 | A        |
+| A × C      | A: 2, C: 3 | C        |
+| B × C      | B: 4, C: 1 | B        |
+
+Temos um ciclo:
+
+A vence B, B vence C, C vence A.
+
+Resultado: não existe vencedor de Condorcet, porque nenhuma alternativa vence todas as outras.
+
+### Copeland
+
+Usamos as mesmas comparações, mas atribuímos +1 para cada vitória e −1 para cada derrota.
+
+| Projeto | Vitórias | Derrotas | Pontuação |
+| ------- | -------- | -------- | --------- |
+| A       | 1        | 1        | 0         |
+| B       | 1        | 1        | 0         |
+| C       | 1        | 1        | 0         |
+
+Resultado: empate triplo. Copeland produz uma pontuação, mas não necessariamente resolve todos os empates.
+
+### Borda Clássico
+
+Com três alternativas, usamos:
+
+- 1º lugar = 2 pontos
+- 2º lugar = 1 ponto
+- 3º lugar = 0 pontos
+
+| Projeto | Pontos | Posição     |
+| ------- | ------ | ----------- |
+| A       | 5      | 2º (empate) |
+| B       | 6      | 1º          |
+| C       | 4      | 3º          |
+
+Correção da soma: A recebe 5, B recebe 6 e C recebe 4.
+
+Resultado: B vence pelo método de Borda, mesmo sem existir vencedor de Condorcet.
+
+## 3. E o AHP?
+
+O Analytic Hierarchy Process (AHP) é diferente dos anteriores porque permite avaliar quanto uma alternativa é preferível à outra, em vez de apenas saber qual vence.
+
+Por exemplo, uma matriz de comparação poderia ser:
+
+|   | A   | B   | C |
+| - | --- | --- | - |
+| A | 1   | 3   | 5 |
+| B | 1/3 | 1   | 2 |
+| C | 1/5 | 1/2 | 1 |
+
+Os números representam a intensidade das preferências, frequentemente usando a escala de Saaty de 1 a 9.
+
+O AHP calcula prioridades relativas e permite verificar a consistência dos julgamentos. Também permite organizar critérios como custo, desempenho, segurança e facilidade de implementação.
+
+## 4. Qual método escolher?
+
+| Sua necessidade                                       | Minha recomendação                      |
+| ----------------------------------------------------- | --------------------------------------- |
+| Identificar uma alternativa que vence todas as outras | Condorcet                               |
+| Criar um ranking a partir de comparações binárias     | Copeland                                |
+| Criar ranking simples com votos ordenados             | Borda Clássico                          |
+| Personalizar a pontuação das posições                 | Borda Modificado                        |
+| Comparar alternativas por uma escala própria de pesos | Matriz ponderada, com fórmula explícita |
+| Tomar decisões envolvendo vários critérios            | AHP                                     |
+
+Minha recomendação: se você está desenvolvendo um sistema em que o usuário compara dois itens por vez para estabelecer prioridades, começaria com Copeland, por ser simples de implementar e interpretar.
+
+Se o usuário precisa indicar também a intensidade da preferência, por exemplo, "A é muito mais importante que B", consideraria o AHP.
+
+Uma pergunta importante para definir a arquitetura: você quer que o usuário compare itens dois a dois, escolhendo apenas o vencedor, ou quer permitir que ele indique também o grau de preferência entre os itens? Essa diferença muda bastante o método mais adequado.
+
+---
+$$$$
+
+## Quadro comparativo dos métodos de decisão e classificação
+
+Considerei nível de apuração como o grau de detalhamento e precisão que o método oferece para diferenciar alternativas, identificar preferências e justificar o resultado.
+
+| Método                                      | Como funciona                                                                                                        | Vantagens                                                                                           | Desvantagens                                                                                                   | Resultado                                                     | Nível de apuração                                                                  |
+| ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| Condorcet                                   | Compara todas as alternativas duas a duas, identificando quem vence cada disputa.                                    | Respeita o vencedor majoritário de todas as comparações, quando existe; fácil de justificar.        | Pode gerar ciclos sem vencedor; não mede intensidade das preferências.                                         | Vencedor de Condorcet ou ausência de vencedor.                | Alto para consenso majoritário; limitado para ranking completo.                    |
+| Copeland                                    | Soma vitórias e derrotas das comparações par a par.                                                                  | Simples, transparente; produz pontuação para todas as alternativas.                                 | Pode gerar empates; normalmente ignora a margem das vitórias.                                                  | Ranking por pontuação de vitórias e derrotas.                 | Médio-alto — considera todos os confrontos, mas perde detalhes das margens.        |
+| Borda Clássico                              | Cada posição no ranking recebe pontos; somam-se os pontos de todos os participantes.                                 | Simples; considera toda a ordenação; normalmente produz um ranking completo, com possíveis empates. | Depende da pontuação escolhida; pode favorecer alternativas bem posicionadas sem maioria nas disputas diretas. | Ranking por pontuação acumulada.                              | Médio-alto — considera posições, não intensidade das preferências.                 |
+| Borda Modificado                            | Altera a pontuação do Borda conforme pesos ou regras definidos.                                                      | Flexível; permite privilegiar determinadas posições ou critérios.                                   | A escolha dos pesos pode introduzir subjetividade e alterar significativamente o resultado.                    | Ranking por pontuação ajustada.                               | Variável (médio a alto) — depende da fórmula adotada.                              |
+| Matriz de Condorcet com pesos simplificados | Compara alternativas duas a duas e atribui pontuações ponderadas aos resultados.                                     | Permite incorporar margens ou intensidades, dependendo da implementação; pode produzir ranking.     | Não é um método único padronizado; pesos arbitrários podem distorcer resultados.                               | Matriz de comparações e ranking ponderado.                    | Variável (médio a alto) — depende dos pesos e da informação coletada.              |
+| AHP (Analytic Hierarchy Process)            | Realiza comparações par a par usando intensidades de preferência; calcula pesos relativos e verifica a consistência. | Permite múltiplos critérios; quantifica prioridades; verifica coerência dos julgamentos.            | Exige mais comparações; torna-se trabalhoso com muitas alternativas; resultados dependem dos julgamentos.      | Ranking, prioridades relativas e indicadores de consistência. | Muito alto em detalhamento analítico, desde que os julgamentos sejam consistentes. |
+
+## Comparação por características
+
+✓ = oferece a característica; ◐ = depende da implementação ou do caso; — = não oferece diretamente.
+
+| Característica                         | Condorcet | Copeland | Borda | Borda Mod. | Matriz ponderada | AHP |
+| -------------------------------------- | --------- | -------- | ----- | ---------- | ---------------- | --- |
+| Comparação par a par                   | ✓         | ✓        | —     | ◐          | ✓                | ✓   |
+| Ranking completo garantido sem empates | —         | —        | —     | —          | —                | —   |
+| Considera intensidade de preferência   | —         | —        | —     | ◐          | ◐                | ✓   |
+| Permite múltiplos critérios            | ◐         | ◐        | ◐     | ◐          | ◐                | ✓   |
+| Verifica consistência dos julgamentos  | —         | —        | —     | —          | —                | ✓   |
+| Implementação simples                  | ✓         | ✓        | ✓     | ◐          | ◐                | —   |
+| Justificativa detalhada da decisão     | ◐         | ◐        | ◐     | ◐          | ◐                | ✓   |
+
+## Esforço de apuração
+
+Para comparar os métodos, considere um cenário com 10 alternativas.
+
+| Método           | Informações necessárias                                                                 | Esforço       |
+| ---------------- | --------------------------------------------------------------------------------------- | ------------- |
+| Condorcet        | Até 45 confrontos distintos por avaliador, derivados de rankings ou comparações diretas | Médio         |
+| Copeland         | Os mesmos 45 confrontos                                                                 | Médio         |
+| Borda Clássico   | Um ranking de 10 alternativas por avaliador                                             | Baixo         |
+| Borda Modificado | Ranking e regras adicionais de pontuação                                                | Baixo a médio |
+| Matriz ponderada | Até 45 comparações, com possíveis pesos                                                 | Médio a alto  |
+| AHP              | 45 julgamentos par a par para um conjunto de 10 elementos em um nível da hierarquia     | Alto          |
+
+Crescimento das comparações par a par
+
+05511016522035101520
+
+Quantidade de pares distintos: n × (n − 1) / 2. Não inclui comparações adicionais entre critérios no AHP.
+
+Quanto mais alternativas, maior o esforço de coleta de preferências, especialmente em avaliações interativas.
+
+## Avaliação geral
+
+Esta é uma avaliação prática para escolha de arquitetura, não uma classificação científica absoluta de precisão.
+
+| Objetivo                                           | Método mais indicado |
+| -------------------------------------------------- | -------------------- |
+| Encontrar uma escolha majoritariamente dominante   | Condorcet            |
+| Ordenar alternativas por confrontos diretos        | Copeland             |
+| Obter um ranking simples com poucos dados          | Borda Clássico       |
+| Personalizar regras de pontuação                   | Borda Modificado     |
+| Criar comparações ponderadas customizadas          | Matriz ponderada     |
+| Analisar decisões complexas com diversos critérios | AHP                  |
+
+Uma distinção importante: maior detalhamento de apuração não significa automaticamente maior precisão ou justiça. O AHP fornece informações mais ricas sobre prioridades e consistência, mas não é necessariamente superior ao Condorcet ou ao Copeland em uma votação coletiva.
+
+Para um aplicativo em que o usuário escolhe entre duas alternativas por vez, Copeland é um bom ponto de partida. Se você quiser mostrar também por quanto uma alternativa é preferida e construir prioridades numéricas, vale considerar AHP ou uma matriz ponderada com regras bem definidas.
+
+---
+$$$$
+
+O AHP (Analytic Hierarchy Process), ou Processo de Análise Hierárquica, é um método de tomada de decisão que compara alternativas duas a duas e calcula o peso ou a importância relativa de cada uma.
+
+A principal diferença em relação ao Condorcet é:
+
+- Condorcet: pergunta qual alternativa é preferida.
+- AHP: pergunta qual alternativa é preferida e quanto ela é mais importante que a outra.
+
+Por exemplo, em vez de apenas informar que A é melhor que B, no AHP você pode indicar que A é 3, 5 ou 7 vezes mais importante que B, segundo a escala de julgamento adotada.
+
+## 1. A escala de comparação do AHP
+
+O AHP tradicional utiliza a escala fundamental de Saaty:
+
+| Valor      | Significado             |
+| ---------- | ----------------------- |
+| 1          | Importância igual       |
+| 3          | Importância moderada    |
+| 5          | Importância forte       |
+| 7          | Importância muito forte |
+| 9          | Importância extrema     |
+| 2, 4, 6, 8 | Valores intermediários  |
+
+Se A é considerado 5 vezes mais importante que B, a comparação inversa recebe o valor \\(1/5\\).
+
+## 2. Exemplo prático
+
+Imagine que precisamos escolher qual projeto desenvolver primeiro:
+
+- A — Aplicativo Android
+- B — Servidor Backend
+- C — Interface Web
+
+Vamos comparar os três projetos considerando um único critério: prioridade de desenvolvimento.
+
+Matriz AHP de comparação
+
+|   | A   | B   | C |
+| - | --- | --- | - |
+| A | 1   | 3   | 5 |
+| B | 1/3 | 1   | 2 |
+| C | 1/5 | 1/2 | 1 |
+
+Esses valores significam que A tem preferência moderada sobre B, A tem preferência forte sobre C e B possui preferência intermediária entre igual e moderada sobre C.
+
+## 3. Como o AHP calcula o resultado?
+
+O método transforma essa matriz em um vetor de prioridades relativas, normalmente usando o autovetor principal da matriz.
+
+Para nosso exemplo, o resultado aproximado é:
+
+Ranking de prioridades
+
+1º A — Aplicativo Android
+
+64,8%
+
+2º B — Servidor Backend
+
+23,0%
+
+3º C — Interface Web
+
+12,2%
+
+Valores aproximados. As prioridades somam 100% e indicam pesos relativos, não probabilidades de sucesso.
+
+Resultado: o projeto A tem o maior peso relativo e, portanto, seria a primeira prioridade segundo os julgamentos informados.
+
+## 4. Teste interativo do AHP
+
+Você pode alterar as preferências abaixo e observar como os pesos e o ranking mudam automaticamente.
+
+Comparações par a par
+
+Comparação 1: A — Android × B — Backend
+
+A — Android é mais importante
+
+B — Backend é mais importante
+
+Moderada (3)
+
+Comparação 2: A — Android × C — Web
+
+A — Android é mais importante
+
+C — Web é mais importante
+
+Forte (5)
+
+Comparação 3: B — Backend × C — Web
+
+B — Backend é mais importante
+
+C — Web é mais importante
+
+Leve (2)
+
+Resultado calculado
+
+1º A — Android
+
+64.8%
+
+2º B — Backend
+
+23.0%
+
+3º C — Web
+
+12.2%
+
+Razão de consistência (CR)
+
+0.32%
+
+Os julgamentos estão dentro do limite convencional de consistência (CR < 10%).
+
+Restaurar valores iniciais
+
+## 5. Uma vantagem importante: verificar a consistência
+
+Imagine que você informou:
+
+- A é 3 vezes mais importante que B.
+- B é 3 vezes mais importante que C.
+- A é 2 vezes mais importante que C.
+
+Existe uma inconsistência: as duas primeiras comparações sugerem uma razão de 9 entre A e C, mas a última comparação indica apenas 2.
+
+O AHP identifica essas divergências utilizando a Razão de Consistência (CR).
+
+De modo geral, valores de CR inferiores a 0,10 são considerados aceitáveis, embora esse limite seja uma convenção e dependa do contexto.
+
+## 6. AHP com múltiplos critérios
+
+O AHP também pode ser hierárquico, isto é, avaliar alternativas usando vários critérios.
+
+Objetivo: escolher o projeto prioritário
+
+Custo
+
+Impacto
+
+Urgência
+
+Android
+
+Backend
+
+Web
+
+Hierarquia simplificada. Cada alternativa é avaliada em relação a cada critério.
+
+Nesse cenário, o processo é:
+
+1. Comparar os critérios entre si para calcular sua importância relativa.
+2. Comparar os projetos dentro de cada critério.
+3. Multiplicar os pesos locais das alternativas pelos pesos dos critérios.
+4. Somar os resultados para obter a prioridade global de cada projeto.
+
+## 7. AHP versus Condorcet
+
+| Característica                  | Condorcet         | AHP                            |
+| ------------------------------- | ----------------- | ------------------------------ |
+| Compara duas alternativas       | Sim               | Sim                            |
+| Mede intensidade da preferência | Não               | Sim                            |
+| Calcula pesos percentuais       | Não diretamente   | Sim                            |
+| Permite múltiplos critérios     | Com adaptações    | Nativamente                    |
+| Detecta inconsistência          | Identifica ciclos | Calcula índice de consistência |
+| Pode não ter vencedor           | Sim               | Normalmente gera prioridades   |
+| Complexidade matemática         | Baixa             | Média a alta                   |
+
+Para seu aplicativo, se a intenção for permitir que uma pessoa compare diversos itens e obtenha um ranking de prioridades, o AHP é interessante porque entrega três informações: posição no ranking, peso relativo e consistência das escolhas.
+
+A principal desvantagem é o crescimento do número de comparações: com 20 itens seriam 190 comparações por conjunto de julgamentos, o que pode tornar o processo cansativo para o usuário.
+
+
+---
+$$$$
+
+
+na tela de Edit list eu quero ter dois botões para escolher entre MBC e AHP, o botão MBC é o default, se cliclar em AHP o MBC fica desativado e AHP ativo
+para isso quero uma variable varMetodo = "mbc" para guardar "mbc" ou "ahp"
+
+na tela de Edit list quero por um "?" do lado direito dois botões MBC e AHP, ao clicar nele aparece um comentario com a explicação do método escolhido:
+
+Borda Modificado (MBC):
+Método de Borda Modificado ou Matriz de Condorcet com pesos simplificados,
+Ele é uma variação de técnicas de votação ou hierarquização baseadas em comparações binárias ou ternárias,
+O método que você está descrevendo, que usa os valores **-1, 0 e 1** para comparação par a par.
+
+Analytic Hierarchy Process - AHP:
+Processo de Análise Hierárquica, é um método de tomada de decisão que compara alternativas duas a duas e calcula o peso ou a importância relativa de cada uma.
+
+
+---
+$$$$
+
+```bash
+cd /home/segodimo/05android/05hierarchylist/ | term
+
+
+adb shell cmd package resolve-activity --brief com.testfiles
+
+com.testfiles/.MainActivity
+
+testfiles
+adb shell am force-stop com.rec.termuxsbs && adb shell am start -n com.rec.termuxsbs/.MainActivity
+adb shell am start -n com.rec.termuxsbs/.MainActivity
+
+e /home/segodimo/05android/05hierarchylist/app/src/main/java/com/testfiles/MainActivity.kt
+e /home/segodimo/05android/05hierarchylist/app/src/main/AndroidManifest.xml
+e app/src/main/java/com/testfiles/viewmodel/SharedViewModel.kt
+e app/src/main/java/com/testfiles/ui/screen/EditScreen.kt
+
+```
+
+---
+$$$$
+
+

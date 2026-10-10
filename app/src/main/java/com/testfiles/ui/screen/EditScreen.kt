@@ -20,6 +20,14 @@ import java.io.OutputStreamWriter
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color // Para as cores customizadas, se necessário
 import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 
 
 @Composable
@@ -30,6 +38,45 @@ fun EditScreen(navController: NavController, viewModel: SharedViewModel) {
     var fileContent by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(true) }
     var message by remember { mutableStateOf<String?>(null) }
+    var showMethodHelp by rememberSaveable { mutableStateOf(false) }
+    val varMetodo = viewModel.varMetodo
+
+    if (showMethodHelp) {
+        AlertDialog(
+            onDismissRequest = { showMethodHelp = false },
+            title = { Text("Métodos de comparação") },
+            text = {
+                Column(
+                    modifier = Modifier.verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Text(
+                        text = "Borda Modificado (MBC)",
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                    Text(
+                        text =
+                        "Método de Borda Modificado ou Matriz de Condorcet com pesos simplificados.\n\n" +
+                        "Ele é uma variação de técnicas de votação ou hierarquização baseadas em comparações binárias ou ternárias.\n\n" +
+                        "O método usa os valores -1, 0 e 1 para comparação par a par."
+                    )
+                    Text(
+                        text = "Analytic Hierarchy Process - AHP",
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                    Text(
+                        text =
+                        "Processo de Análise Hierárquica, é um método de tomada de decisão que compara alternativas duas a duas e calcula o peso ou a importância relativa de cada uma."
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showMethodHelp = false }) {
+                    Text("Fechar")
+                }
+            }
+        )
+    }
 
     // Carrega o conteúdo inicial do arquivo
     LaunchedEffect(fileUri) {
@@ -54,8 +101,7 @@ fun EditScreen(navController: NavController, viewModel: SharedViewModel) {
 
                 Column(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 136.dp) // 104dp botão + 48dp de padding
+                        .fillMaxSize()
                 ) {
                     Column(
                         modifier = Modifier
@@ -77,6 +123,7 @@ fun EditScreen(navController: NavController, viewModel: SharedViewModel) {
                             text = "Edit List",
                             style = MaterialTheme.typography.titleLarge,
                         )
+
                     }
 
                     // Campo de texto para edição
@@ -85,7 +132,7 @@ fun EditScreen(navController: NavController, viewModel: SharedViewModel) {
                         onValueChange = { fileContent = it },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .fillMaxHeight(),
+                            .weight(1f),
                         label = {
                             message?.let {
                                 Text(
@@ -109,13 +156,50 @@ fun EditScreen(navController: NavController, viewModel: SharedViewModel) {
                             cursorColor = MaterialTheme.colorScheme.primary
                         )
                     )
-                }
-
-                Box(
+                Column(
                     modifier = Modifier
-                        .padding(vertical = 16.dp)
-                        .align(Alignment.BottomCenter)
+                        .fillMaxWidth()
+                        .padding(vertical = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
+
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth().selectableGroup(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        listOf("mbc", "ahp").forEach { metodo ->
+                            val isSelected = varMetodo == metodo
+                            Row(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .selectable(
+                                        selected = isSelected,
+                                        onClick = { viewModel.selecionarMetodo(metodo) },
+                                        role = Role.RadioButton
+                                    )
+                                    .heightIn(min = 48.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                RadioButton(
+                                    selected = isSelected,
+                                    onClick = null
+                                )
+                                Spacer(Modifier.width(8.dp))
+                                Text(metodo.uppercase())
+                            }
+                        }
+                        IconButton(
+                            onClick = { showMethodHelp = true },
+                            modifier = Modifier.semantics {
+                                contentDescription = "Explicação dos métodos MBC e AHP"
+                            }
+                        ) {
+                            Text("?", style = MaterialTheme.typography.titleLarge)
+                        }
+                    }
+
                     // Aqui passamos as variáveis necessárias
                     EditButtons(
                         context = context,
@@ -125,6 +209,7 @@ fun EditScreen(navController: NavController, viewModel: SharedViewModel) {
                         viewModel = viewModel,
                         navController = navController
                     )
+                }
                 }
             }
         }
@@ -189,7 +274,7 @@ fun EditButtons(
             shape = RoundedCornerShape(8.dp),
         ) {
             Text(
-                text = "Comparar",
+                text = "Comparar - ${viewModel.varMetodo.uppercase()}",
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.padding(vertical = 8.dp)
             )

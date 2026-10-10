@@ -3,6 +3,9 @@ package com.testfiles.viewmodel
 import android.content.Context
 import android.net.Uri
 import androidx.documentfile.provider.DocumentFile
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.*
@@ -12,6 +15,15 @@ import kotlinx.coroutines.launch
 data class ItemPair(val first: String, val second: String)
 
 class SharedViewModel : ViewModel() {
+
+    // Método escolhido na tela de edição: "mbc" ou "ahp".
+    var varMetodo by mutableStateOf("mbc")
+        private set
+
+    fun selecionarMetodo(metodo: String) {
+        require(metodo == "mbc" || metodo == "ahp")
+        varMetodo = metodo
+    }
 
     // URI do arquivo selecionado pelo usuário
     private val _selectedFileUri = MutableStateFlow<Uri?>(null)
