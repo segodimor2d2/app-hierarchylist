@@ -1,5 +1,6 @@
 package com.testfiles.ui.screen
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.awaitEachGesture
@@ -14,6 +15,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.customActions
@@ -22,12 +25,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.testfiles.viewmodel.SharedViewModel
-import kotlin.math.roundToInt
 
 @Composable
 fun CompareAhpScreen(navController: NavController, viewModel: SharedViewModel) {
     val pairs by viewModel.itemPairs.collectAsState()
     var answers by rememberSaveable(pairs) { mutableStateOf(List<Double?>(pairs.size) { null }) }
+    var positionsX by rememberSaveable(pairs) { mutableStateOf(List<Float?>(pairs.size) { null }) }
+    var positionsY by rememberSaveable(pairs) { mutableStateOf(List<Float?>(pairs.size) { null }) }
     var page by rememberSaveable(pairs) { mutableIntStateOf(0) }
 
     Surface(modifier = Modifier.fillMaxSize()) {
@@ -47,8 +51,14 @@ fun CompareAhpScreen(navController: NavController, viewModel: SharedViewModel) {
                 Text("Qual item é mais importante?", style = MaterialTheme.typography.titleMedium)
                 Text("Deslize para escolher o item e a intensidade. Ao soltar, a resposta será salva e a próxima pergunta será exibida.")
                 key(page, pairs) {
-                    AhpTouchArea(pair.first, pair.second, answers[page]) { ratio ->
+                    val savedPosition = positionsX[page]?.let { x ->
+                        positionsY[page]?.let { y -> Offset(x, y) }
+                    }
+                    AhpTouchArea(pair.first, pair.second, savedPosition) { position ->
+                        val ratio = ahpSelectionAt(position.x, position.y, 1f, 1f).ratio
                         answers = answers.toMutableList().also { it[page] = ratio }
+                        positionsX = positionsX.toMutableList().also { it[page] = position.x }
+                        positionsY = positionsY.toMutableList().also { it[page] = position.y }
                         if (page < pairs.lastIndex) page++
                     }
                 }
@@ -90,74 +100,84 @@ internal fun ahpSelectionAt(x: Float, y: Float, width: Float, height: Float): Ah
 }
 
 @Composable
-internal fun AhpTouchArea(first: String, second: String, savedAnswer: Double?, onAnswer: (Double) -> Unit) {
-    var preview by remember { mutableStateOf<AhpTouchSelection?>(null) }
+internal fun AhpTouchArea(
+    first: String,
+    second: String,
+    savedPosition: Offset?,
+    onAnswer: (Offset) -> Unit
+) {
+    var previewPosition by remember { mutableStateOf<Offset?>(null) }
     val callback by rememberUpdatedState(onAnswer)
-    val savedSelection = savedAnswer?.let {
-        AhpTouchSelection(
-            when { it > 1 -> -1; it < 1 -> 1; else -> 0 },
-            (if (it < 1) 1 / it else it).roundToInt()
-        )
-    }
-    val selection = preview ?: savedSelection
-    val labels = listOf(first, "Igualmente importantes", second)
+    val position = previewPosition ?: savedPosition
+    val selection = position?.let { ahpSelectionAt(it.x, it.y, 1f, 1f) }
     val levels = listOf(9, 7, 5, 3, 1)
+    val markerColor = MaterialTheme.colorScheme.primary
+    val markerOutline = MaterialTheme.colorScheme.onPrimary
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Row(modifier = Modifier.fillMaxWidth()) {
-            labels.forEach { label ->
-                Text(label, modifier = Modifier.weight(1f).padding(4.dp), textAlign = TextAlign.Center)
-            }
-        }
-        Column(
+        Box(
             modifier = Modifier.fillMaxWidth().aspectRatio(1f)
                 .clip(RoundedCornerShape(8.dp))
+                .background(MaterialTheme.colorScheme.surfaceVariant)
                 .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp))
                 .semantics {
-                    customActions = listOf(CustomAccessibilityAction("Igualmente importantes") { callback(1.0); true }) +
-                        listOf(-1 to first, 1 to second).flatMap { (side, label) ->
-                            levels.map { level ->
-                                CustomAccessibilityAction("$label, intensidade $level") {
-                                    callback(AhpTouchSelection(side, level).ratio)
-                                    true
-                                }
+                    customActions = listOf(CustomAccessibilityAction("Igualmente importantes") {
+                        callback(Offset(0.5f, 0.5f)); true
+                    }) + listOf(-1 to first, 1 to second).flatMap { (side, label) ->
+                        levels.map { level ->
+                            CustomAccessibilityAction("$label, intensidade $level") {
+                                callback(Offset(if (side == -1) 1f / 6 else 5f / 6, (10 - level) / 10f))
+                                true
                             }
                         }
+                    }
                 }
                 .pointerInput(first, second) {
+                    fun normalizedPosition(touch: Offset) = Offset(
+                        (touch.x / size.width).coerceIn(0f, 1f),
+                        (touch.y / size.height).coerceIn(0f, 1f)
+                    )
                     awaitEachGesture {
                         val down = awaitFirstDown()
                         down.consume()
-                        preview = ahpSelectionAt(down.position.x, down.position.y, size.width.toFloat(), size.height.toFloat())
+                        previewPosition = normalizedPosition(down.position)
                         try {
                             while (true) {
                                 val touch = awaitPointerEvent().changes.firstOrNull { it.id == down.id } ?: break
-                                preview = ahpSelectionAt(touch.position.x, touch.position.y, size.width.toFloat(), size.height.toFloat())
+                                previewPosition = normalizedPosition(touch.position)
                                 touch.consume()
                                 if (!touch.pressed) {
-                                    if (touch.previousPressed) callback(requireNotNull(preview).ratio)
+                                    if (touch.previousPressed) callback(requireNotNull(previewPosition))
                                     break
                                 }
                             }
                         } finally {
-                            preview = null
+                            previewPosition = null
                         }
                     }
                 }
         ) {
-            levels.forEach { level ->
-                Row(modifier = Modifier.weight(1f).fillMaxWidth()) {
-                    listOf(-1, 0, 1).forEach { side ->
-                        val highlighted = selection?.side == side && (side == 0 || selection.intensity == level)
-                        Box(
-                            modifier = Modifier.weight(1f).fillMaxHeight()
-                                .background(if (highlighted) MaterialTheme.colorScheme.primaryContainer
-                                    else MaterialTheme.colorScheme.surfaceVariant)
-                                .border(0.5.dp, MaterialTheme.colorScheme.outline),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(if (side == 0) "=" else level.toString())
-                        }
-                    }
+            Row(
+                modifier = Modifier.fillMaxWidth().align(Alignment.Center),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                listOf(first, "=", second).forEach { label ->
+                    Text(
+                        label,
+                        modifier = Modifier.weight(1f).padding(8.dp),
+                        textAlign = TextAlign.Center,
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                }
+            }
+            Canvas(modifier = Modifier.matchParentSize()) {
+                position?.let {
+                    val radius = 9.dp.toPx().coerceAtMost(size.minDimension / 2)
+                    val center = Offset(
+                        (it.x * size.width).coerceIn(radius, size.width - radius),
+                        (it.y * size.height).coerceIn(radius, size.height - radius)
+                    )
+                    drawCircle(markerColor, radius, center)
+                    drawCircle(markerOutline, radius, center, style = Stroke(2.dp.toPx()))
                 }
             }
         }

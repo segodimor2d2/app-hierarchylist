@@ -908,6 +908,16 @@ para cada slide mude,
 opçao A, pelo item da lista que corresponde a opçao A,
 opçao B, pelo item da lista que corresponde a opçao B,
 
+
+na tela AHP para cada slide quero:
+na area eu não quero ver as divições, deve ter uma aparência de um selector X,Y
+de cada lado vai aparecer o nome do item,
+a area do centro poder ter somente um igual no medio da area,
+o toucho pode ser acompanhad9 por uma bol8nha dentro da area,
+aovsoltar a bol8nha salva a posicao X,Y
+
+
+
 ---
 $$$$
 
