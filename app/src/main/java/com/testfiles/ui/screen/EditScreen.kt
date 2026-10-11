@@ -225,7 +225,7 @@ fun EditScreen(navController: NavController, viewModel: SharedViewModel) {
                             shape = RoundedCornerShape(12.dp)
                         ) {
                             Text(
-                                text = "Salvar Alterações",
+                                text = "Salvar Lista",
                                 style = MaterialTheme.typography.titleMedium,
                                 modifier = Modifier.padding(vertical = 8.dp)
                             )

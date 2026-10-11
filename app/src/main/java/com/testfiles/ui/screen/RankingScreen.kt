@@ -1,6 +1,5 @@
 package com.testfiles.ui.screen
 
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
@@ -10,12 +9,13 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
@@ -229,10 +229,12 @@ fun DraggableRankingList(
                             style = MaterialTheme.typography.bodyLarge,
                             modifier = Modifier.weight(1f)
                         )
-                        Icon(
-                            imageVector = Icons.Default.MoreVert,
-                            contentDescription = "Arraste",
-                            modifier = Modifier.padding(start = 8.dp)
+                        Text(
+                            text = "↕",
+                            style = MaterialTheme.typography.titleLarge,
+                            modifier = Modifier
+                                .padding(start = 8.dp)
+                                .semantics { contentDescription = "Arraste" }
                         )
                     }
                 }

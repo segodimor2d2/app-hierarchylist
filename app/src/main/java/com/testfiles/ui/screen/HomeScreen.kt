@@ -48,6 +48,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.documentfile.provider.DocumentFile
 import androidx.navigation.NavController
@@ -57,14 +58,27 @@ import com.testfiles.viewmodel.SharedViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 
 @Composable
 fun HomeScreen(navController: NavController, viewModel: SharedViewModel) {
     val context = LocalContext.current
     var folderUri by remember { mutableStateOf<Uri?>(null) }
+    var folderName by remember { mutableStateOf("Listas") }
     var mdFiles by remember { mutableStateOf<List<Pair<String, Uri>>>(emptyList()) }
     var showOpenFileButton by remember { mutableStateOf(true) }
+
+    LaunchedEffect(folderUri) {
+        folderName = withContext(Dispatchers.IO) {
+            folderUri?.let { uri ->
+                runCatching { DocumentFile.fromTreeUri(context, uri)?.name }
+                    .getOrNull()
+                    ?.takeIf { it.isNotBlank() }
+            } ?: "Listas"
+        }
+    }
 
     val folderPicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocumentTree(),
@@ -123,8 +137,8 @@ fun HomeScreen(navController: NavController, viewModel: SharedViewModel) {
                 ) {
                     Column(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 84.dp) // 52dp button + 32dp do padding
+                            .fillMaxSize()
+                            .padding(bottom = if (mdFiles.isEmpty()) 16.dp else 84.dp)
                     ) {
 
                         Column(
@@ -145,33 +159,68 @@ fun HomeScreen(navController: NavController, viewModel: SharedViewModel) {
                             }
 
                             Text(
-                                text = "Listas",
+                                text = folderName,
                                 style = MaterialTheme.typography.titleLarge,
                             )
 
                         }
 
-                        FileGridView(
-                            mdFiles = mdFiles,
-                            navController = navController,
-                            viewModel = viewModel
-                        )
+                        if (mdFiles.isEmpty()) {
+                            Box(
+                                modifier = Modifier.fillMaxWidth().weight(1f),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Column(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                                ) {
+                                    Text(
+                                        text = "Você ainda não possui uma lista",
+                                        style = MaterialTheme.typography.headlineSmall,
+                                        textAlign = TextAlign.Center
+                                    )
+                                    Text(
+                                        text = "Para iniciar, clique em ‘criar uma lista’",
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        textAlign = TextAlign.Center
+                                    )
+                                    CreateListButton(
+                                        folderUri = folderUri,
+                                        context = context,
+                                        mdFiles = mdFiles,
+                                        setMdFiles = { mdFiles = it },
+                                        navController = navController,
+                                        viewModel = viewModel
+                                    )
+                                }
+                            }
+                        } else {
+                            FileGridView(
+                                mdFiles = mdFiles,
+                                navController = navController,
+                                viewModel = viewModel
+                            )
+                        }
 
                     }
 
-                    Box(
-                        modifier = Modifier
-                            .padding(vertical = 16.dp)
-                            .align(Alignment.BottomCenter)
-                    ) {
-                        CreateListButton(
-                            folderUri = folderUri,
-                            context = context,
-                            mdFiles = mdFiles,
-                            setMdFiles = { mdFiles = it },
-                            navController = navController,
-                            viewModel = viewModel
-                        )
+                    if (mdFiles.isNotEmpty()) {
+                        Box(
+                            modifier = Modifier
+                                .padding(vertical = 16.dp)
+                                .align(Alignment.BottomCenter)
+                        ) {
+                            CreateListButton(
+                                folderUri = folderUri,
+                                context = context,
+                                mdFiles = mdFiles,
+                                setMdFiles = { mdFiles = it },
+                                navController = navController,
+                                viewModel = viewModel
+                            )
+                        }
                     }
                 }
             }
@@ -196,14 +245,14 @@ fun SolicitarAcessoCard(
     ) {
         Column(modifier = Modifier.padding(24.dp)) {
             Text(
-                text = "Solicitação de Acesso",
+                text = "Bem vindo!",
                 style = MaterialTheme.typography.titleLarge,
                 color = MaterialTheme.colorScheme.primary
 
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "Para iniciar, por favor escolha uma pasta e permita o acesso a ela.",
+                text = "Para iniciar a hierarquização e organização da lista, escolha uma pasta para salvá-la. Em seguida, clique em 'Permitir Acesso'.",
                 style = MaterialTheme.typography.bodyMedium,
             )
             Spacer(modifier = Modifier.height(16.dp))
