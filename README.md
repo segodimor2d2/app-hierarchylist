@@ -876,7 +876,7 @@ e vai continuar pro proximo slide.
 
 me confirma se vc ente deu
 
-para cada slide squero eu mude,
+para cada slide mude,
 opçao A, pelo item da lista que corresponde a opçao A,
 opçao B, pelo item da lista que corresponde a opçao B,
 
@@ -885,9 +885,35 @@ opçao B, pelo item da lista que corresponde a opçao B,
 ---
 $$$$
 
+na tela AHP,
+para cada slide de perguntas,
+eu quero criar uma area quadrada que reconhece o touch,
+a area horizontal vai ser dividida em 3 partes,
+a area vertical vai poder medir valores de 1 abaixo e 9 acima,
+a ezquerda será o item da lista que corresponde a opçao A,
+no meio seria igualmente importantes,
+a ezquerda será o item da lista que corresponde a opçao B,
+ao deslizar na area,
+um texto embaixo da area vai mostrar a que posiçao corresponde o lugar onde estou deslizando o dedo na area,
+outro texto vai mostrar a posiçao do dedo na verticar deacordo a Escala: 1 = igual; 3 = moderada; 5 = forte; 7 = muito forte; 9 = extrema.
+se eu soltar o dedo da area, o valor vai ser salvo na resposta
+e vai continuar pro proximo slide.
+
+me confirma se vc ente deu
+
+
+
+
+para cada slide mude,
+opçao A, pelo item da lista que corresponde a opçao A,
+opçao B, pelo item da lista que corresponde a opçao B,
+
+---
+$$$$
+
 ```bash
 cd /home/segodimo/05android/05hierarchylist/ | term
-
+e app/src/main/java/com/testfiles/ui/screen/CompareScreen.kt
 
 adb shell cmd package resolve-activity --brief com.testfiles
 
