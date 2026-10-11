@@ -3,15 +3,13 @@ package com.testfiles.ui.screen
 import android.content.Context
 import android.net.Uri
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
@@ -28,8 +26,12 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
+import androidx.compose.ui.focus.onFocusChanged
 
 
+@OptIn(ExperimentalLayoutApi::class, androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun EditScreen(navController: NavController, viewModel: SharedViewModel) {
     val context = LocalContext.current
@@ -40,6 +42,15 @@ fun EditScreen(navController: NavController, viewModel: SharedViewModel) {
     var message by remember { mutableStateOf<String?>(null) }
     var showMethodHelp by rememberSaveable { mutableStateOf(false) }
     val varMetodo = viewModel.varMetodo
+    val editorRequester = remember { BringIntoViewRequester() }
+    var editorFocused by remember { mutableStateOf(false) }
+    val keyboardVisible = WindowInsets.isImeVisible
+
+    LaunchedEffect(keyboardVisible, editorFocused) {
+        if (keyboardVisible && editorFocused) {
+            editorRequester.bringIntoView()
+        }
+    }
 
     if (showMethodHelp) {
         AlertDialog(
@@ -93,6 +104,7 @@ fun EditScreen(navController: NavController, viewModel: SharedViewModel) {
             modifier = Modifier
                 .fillMaxSize()
                 .systemBarsPadding()
+                .imePadding()
                 .padding(horizontal = 16.dp)
         ) {
             if (isLoading) {
@@ -102,128 +114,90 @@ fun EditScreen(navController: NavController, viewModel: SharedViewModel) {
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
                 ) {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Voltar"
+                        )
+                    }
+
+                    // Edição: a tela pode rolar quando o teclado reduz o espaço disponível.
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(bottom = 24.dp)
+                            .bringIntoViewRequester(editorRequester),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .clickable { navController.popBackStack() }
-                                .padding(vertical = 16.dp)
-                        ) {
-                            Icon(
-                                Icons.Default.ArrowBack,
-                                contentDescription = "Voltar"
-                            )
-                        }
-
                         Text(
                             text = "Edit List",
-                            style = MaterialTheme.typography.titleLarge,
+                            style = MaterialTheme.typography.titleLarge
                         )
-
+                        TextField(
+                            value = fileContent,
+                            onValueChange = { fileContent = it },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(
+                                    min = if (keyboardVisible) 120.dp else 160.dp,
+                                    max = if (keyboardVisible) 120.dp else 280.dp
+                                )
+                                .onFocusChanged { editorFocused = it.isFocused },
+                            label = { Text("Digite algo") },
+                            supportingText = {
+                                message?.let {
+                                    Text(
+                                        text = it,
+                                        color = if (it.startsWith("Erro")) MaterialTheme.colorScheme.error
+                                        else MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                            },
+                            shape = RoundedCornerShape(12.dp),
+                            colors = TextFieldDefaults.colors(
+                                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                focusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+                                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+                                focusedIndicatorColor = Color.Transparent,
+                                unfocusedIndicatorColor = Color.Transparent,
+                                cursorColor = MaterialTheme.colorScheme.primary
+                            )
+                        )
+                        OutlinedButton(
+                            onClick = {
+                                message = saveFileContent(context, fileUri, fileContent)
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Text(
+                                text = "Salvar Alterações",
+                                style = MaterialTheme.typography.titleMedium,
+                                modifier = Modifier.padding(vertical = 8.dp)
+                            )
+                        }
                     }
 
-                    // Campo de texto para edição
-                    TextField(
-                        value = fileContent,
-                        onValueChange = { fileContent = it },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f),
-                        label = {
-                            message?.let {
-                                Text(
-                                    text = it,
-                                    color = if (it.startsWith("Erro")) MaterialTheme.colorScheme.error
-                                    else MaterialTheme.colorScheme.primary
-                                )
-                            } ?: Text(
-                                    text = "Digite algo",
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                        },
-                        shape = RoundedCornerShape(8.dp),
-                        colors = TextFieldDefaults.colors(
-                            focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                            unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                            focusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
-                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
-                            focusedIndicatorColor = Color.Transparent,
-                            unfocusedIndicatorColor = Color.Transparent,
-                            cursorColor = MaterialTheme.colorScheme.primary
-                        )
-                    )
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 20.dp))
 
-                    Button(
-                        onClick = {
-                            message = saveFileContent(context, fileUri, fileContent)
-                        },
-
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(8.dp),
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline), // opcional (padrão do Material 3)
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = MaterialTheme.colorScheme.primary // cor do texto/ícone
-                        ),
-                    ) {
-                        Text(
-                            text = "Salvar Alterações",
-                            style = MaterialTheme.typography.titleMedium,
-                            modifier = Modifier.padding(vertical = 8.dp)
-                        )
-                    }
-
-
+                    // Comparação: título, escolha do método e ação principal.
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(bottom = 24.dp)
+                            .padding(bottom = 16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-
-                        Text(
-                            text = "Compare List",
-                            style = MaterialTheme.typography.titleLarge,
-                        )
-
-                    }
-
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 16.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-
-
                         Row(
-                            modifier = Modifier.fillMaxWidth().selectableGroup(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            listOf("ahp", "mbc").forEach { metodo ->
-                                val isSelected = varMetodo == metodo
-                                Row(
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .selectable(
-                                            selected = isSelected,
-                                            onClick = { viewModel.selecionarMetodo(metodo) },
-                                            role = Role.RadioButton
-                                        )
-                                        .heightIn(min = 48.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    RadioButton(
-                                        selected = isSelected,
-                                        onClick = null
-                                    )
-                                    Spacer(Modifier.width(8.dp))
-                                    Text(metodo.uppercase())
-                                }
-                            }
+                            Text(
+                                text = "Compare List",
+                                style = MaterialTheme.typography.titleLarge,
+                                modifier = Modifier.weight(1f)
+                            )
                             IconButton(
                                 onClick = { showMethodHelp = true },
                                 modifier = Modifier.semantics {
@@ -233,36 +207,56 @@ fun EditScreen(navController: NavController, viewModel: SharedViewModel) {
                                 Text("?", style = MaterialTheme.typography.titleLarge)
                             }
                         }
-
-                        Column(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        Row(
+                            modifier = Modifier.fillMaxWidth().selectableGroup(),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-
-
-                            Button(
-                                onClick = {
-                                    message = saveFileContent(context, fileUri, fileContent)
-                                    viewModel.processData(fileContent)
-                                    navController.navigate(if (viewModel.varMetodo == "ahp") "compare_ahp" else "compare")
-                                },
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = MaterialTheme.colorScheme.primary,
-                                    contentColor = MaterialTheme.colorScheme.onPrimary
-                                ),
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(8.dp),
-                            ) {
-                                Text(
-                                    text = "Comparar - ${viewModel.varMetodo.uppercase()}",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    modifier = Modifier.padding(vertical = 8.dp)
-                                )
+                            listOf("ahp", "mbc").forEach { metodo ->
+                                val isSelected = varMetodo == metodo
+                                Surface(
+                                    modifier = Modifier.weight(1f),
+                                    shape = RoundedCornerShape(12.dp),
+                                    color = if (isSelected) MaterialTheme.colorScheme.secondaryContainer
+                                    else MaterialTheme.colorScheme.surface,
+                                    border = BorderStroke(
+                                        1.dp,
+                                        if (isSelected) MaterialTheme.colorScheme.primary
+                                        else MaterialTheme.colorScheme.outlineVariant
+                                    )
+                                ) {
+                                    Row(
+                                        modifier = Modifier
+                                            .selectable(
+                                                selected = isSelected,
+                                                onClick = { viewModel.selecionarMetodo(metodo) },
+                                                role = Role.RadioButton
+                                            )
+                                            .heightIn(min = 48.dp)
+                                            .padding(horizontal = 12.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        RadioButton(selected = isSelected, onClick = null)
+                                        Spacer(Modifier.width(8.dp))
+                                        Text(metodo.uppercase())
+                                    }
+                                }
                             }
-
-
                         }
-
+                        Button(
+                            onClick = {
+                                message = saveFileContent(context, fileUri, fileContent)
+                                viewModel.processData(fileContent)
+                                navController.navigate(if (viewModel.varMetodo == "ahp") "compare_ahp" else "compare")
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Text(
+                                text = "Comparar - ${viewModel.varMetodo.uppercase()}",
+                                style = MaterialTheme.typography.titleMedium,
+                                modifier = Modifier.padding(vertical = 8.dp)
+                            )
+                        }
                     }
                 }
             }

@@ -23,7 +23,7 @@ class SharedViewModel : ViewModel() {
         private set
 
     fun selecionarMetodo(metodo: String) {
-        require(metodo == "mbc" || metodo == "mbc")
+        require(metodo == "mbc" || metodo == "ahp")
         varMetodo = metodo
     }
 
