@@ -16,6 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.semantics.CustomAccessibilityAction
@@ -91,8 +92,8 @@ internal data class AhpTouchSelection(val side: Int, val intensity: Int) {
 internal fun ahpSelectionAt(x: Float, y: Float, width: Float, height: Float): AhpTouchSelection {
     require(width > 0 && height > 0)
     val side = when {
-        x < width / 3 -> -1
-        x < width * 2 / 3 -> 0
+        x < width * 0.4f -> -1
+        x < width * 0.6f -> 0
         else -> 1
     }
     val band = (y / height * 5).toInt().coerceIn(0, 4)
@@ -111,8 +112,18 @@ internal fun AhpTouchArea(
     val position = previewPosition ?: savedPosition
     val selection = position?.let { ahpSelectionAt(it.x, it.y, 1f, 1f) }
     val levels = listOf(9, 7, 5, 3, 1)
-    val markerColor = MaterialTheme.colorScheme.primary
-    val markerOutline = MaterialTheme.colorScheme.onPrimary
+    // Color follows height even when the middle zone records equality.
+    val heightIntensity = position?.let { ahpSelectionAt(0f, it.y, 1f, 1f).intensity }
+    val selectionColor = when (heightIntensity) {
+        1 -> Color(0xFF43A047)
+        3 -> Color(0xFF9EAD32)
+        5 -> Color(0xFFFBC02D)
+        7 -> Color(0xFFFB8C00)
+        9 -> Color(0xFFE53935)
+        else -> MaterialTheme.colorScheme.onSurface
+    }
+    val markerColor = selectionColor.copy(alpha = 0.5f)
+    val markerOutline = selectionColor.copy(alpha = 0.65f)
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Box(
             modifier = Modifier.fillMaxWidth().aspectRatio(1f)
@@ -125,7 +136,7 @@ internal fun AhpTouchArea(
                     }) + listOf(-1 to first, 1 to second).flatMap { (side, label) ->
                         levels.map { level ->
                             CustomAccessibilityAction("$label, intensidade $level") {
-                                callback(Offset(if (side == -1) 1f / 6 else 5f / 6, (10 - level) / 10f))
+                                callback(Offset(if (side == -1) 0.2f else 0.8f, (10 - level) / 10f))
                                 true
                             }
                         }
@@ -160,10 +171,10 @@ internal fun AhpTouchArea(
                 modifier = Modifier.fillMaxWidth().align(Alignment.Center),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                listOf(first, "=", second).forEach { label ->
+                listOf(first to 0.4f, "=" to 0.2f, second to 0.4f).forEach { (label, weight) ->
                     Text(
                         label,
-                        modifier = Modifier.weight(1f).padding(8.dp),
+                        modifier = Modifier.weight(weight).padding(8.dp),
                         textAlign = TextAlign.Center,
                         style = MaterialTheme.typography.titleMedium
                     )
@@ -189,6 +200,7 @@ internal fun AhpTouchArea(
                 else -> "Toque ou deslize para escolher"
             },
             modifier = Modifier.fillMaxWidth(),
+            color = selectionColor,
             textAlign = TextAlign.Center,
             style = MaterialTheme.typography.titleMedium
         )
@@ -204,6 +216,7 @@ internal fun AhpTouchArea(
                 "Intensidade: ${it.intensity} — $description"
             } ?: "Intensidade: deslize de baixo (1) para cima (9)",
             modifier = Modifier.fillMaxWidth(),
+            color = selectionColor,
             textAlign = TextAlign.Center
         )
     }

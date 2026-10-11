@@ -899,7 +899,7 @@ outro texto vai mostrar a posiçao do dedo na verticar deacordo a Escala: 1 = ig
 se eu soltar o dedo da area, o valor vai ser salvo na resposta
 e vai continuar pro proximo slide.
 
-me confirma se vc ente deu
+me confirma se vc entedeu
 
 
 
@@ -916,7 +916,13 @@ a area do centro poder ter somente um igual no medio da area,
 o toucho pode ser acompanhad9 por uma bol8nha dentro da area,
 aovsoltar a bol8nha salva a posicao X,Y
 
+me confirma se vc entedeu
 
+
+na tela AHP para cada slide muder:
+o tamnaho da area do = na horizonta pode ser de 20% os outros dois seriam de 40%
+mude a cor da bolinha dependendo da altura por cada nivel de 1-9, 1 começa  verde e 9 termina em vermelho
+de cores transparentes a bolinha sempre,
 
 ---
 $$$$

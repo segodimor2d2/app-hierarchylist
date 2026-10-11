@@ -31,7 +31,9 @@ class AhpTouchAreaTest {
         assertEquals(7, ahpSelectionAt(0f, 60f, 300f, 300f).intensity)
         assertEquals(9, ahpSelectionAt(-10f, -10f, 300f, 300f).intensity)
         assertEquals(1, ahpSelectionAt(310f, 310f, 300f, 300f).intensity)
-        assertEquals(0, ahpSelectionAt(100f, 0f, 300f, 300f).side)
-        assertEquals(1, ahpSelectionAt(200f, 0f, 300f, 300f).side)
+        assertEquals(-1, ahpSelectionAt(119f, 0f, 300f, 300f).side)
+        assertEquals(0, ahpSelectionAt(120f, 0f, 300f, 300f).side)
+        assertEquals(0, ahpSelectionAt(179f, 0f, 300f, 300f).side)
+        assertEquals(1, ahpSelectionAt(180f, 0f, 300f, 300f).side)
     }
 }
