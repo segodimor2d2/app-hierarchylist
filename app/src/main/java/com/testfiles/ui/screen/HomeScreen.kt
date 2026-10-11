@@ -33,7 +33,6 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -201,7 +200,7 @@ fun HomeScreen(navController: NavController, viewModel: SharedViewModel) {
                                 navController = navController,
                                 viewModel = viewModel
                             )
-                            HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
+                            Spacer(modifier = Modifier.height(16.dp))
                             FileSection(
                                 title = "Listas concluídas",
                                 emptyMessage = "Nenhuma lista concluída.",
@@ -286,19 +285,25 @@ private fun FileSection(
     navController: NavController,
     viewModel: SharedViewModel
 ) {
-    Column(
+    Surface(
         modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerHigh
     ) {
-        Text(title, style = MaterialTheme.typography.titleMedium)
-        if (files.isEmpty()) {
-            Text(
-                emptyMessage,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        } else {
-            FileGridView(files, navController, viewModel)
+        Column(
+            modifier = Modifier.fillMaxSize().padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Text(title, style = MaterialTheme.typography.titleMedium)
+            if (files.isEmpty()) {
+                Text(
+                    emptyMessage,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            } else {
+                FileGridView(files, navController, viewModel)
+            }
         }
     }
 }
