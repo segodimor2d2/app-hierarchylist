@@ -3,6 +3,7 @@ package com.testfiles.ui.screen
 import android.content.Context
 import android.net.Uri
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -166,7 +167,12 @@ fun EditScreen(navController: NavController, viewModel: SharedViewModel) {
                         val document = fileUri?.let { DocumentFile.fromSingleUri(context, it) }
                         if (document?.delete() == true) {
                             viewModel.startNewList()
-                            navController.popBackStack()
+                            if (!navController.popBackStack("home", inclusive = false)) {
+                                navController.navigate("home") {
+                                    popUpTo("edit") { inclusive = true }
+                                    launchSingleTop = true
+                                }
+                            }
                         } else {
                             message = "Erro: Não foi possível excluir a lista."
                         }
@@ -210,7 +216,7 @@ fun EditScreen(navController: NavController, viewModel: SharedViewModel) {
                         modifier = Modifier
                             .fillMaxWidth()
                             .bringIntoViewRequester(editorRequester),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -253,15 +259,6 @@ fun EditScreen(navController: NavController, viewModel: SharedViewModel) {
                                 .height(editorHeight.dp)
                                 .onFocusChanged { editorFocused = it.isFocused },
                             label = { Text("Digite algo") },
-                            supportingText = {
-                                message?.let {
-                                    Text(
-                                        text = it,
-                                        color = if (it.startsWith("Erro")) MaterialTheme.colorScheme.error
-                                        else MaterialTheme.colorScheme.primary
-                                    )
-                                }
-                            },
                             shape = RoundedCornerShape(12.dp),
                             colors = TextFieldDefaults.colors(
                                 focusedTextColor = MaterialTheme.colorScheme.onSurface,
@@ -275,10 +272,10 @@ fun EditScreen(navController: NavController, viewModel: SharedViewModel) {
                         )
                         Surface(
                             shape = RoundedCornerShape(8.dp),
-                            color = MaterialTheme.colorScheme.surfaceContainer,
+                            color = Color.Transparent,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .heightIn(min = 48.dp)
+                                .heightIn(min = 24.dp)
                                 .draggable(
                                     orientation = Orientation.Vertical,
                                     state = rememberDraggableState { delta ->
@@ -309,10 +306,13 @@ fun EditScreen(navController: NavController, viewModel: SharedViewModel) {
                                 }
                         ) {
                             Box(contentAlignment = Alignment.Center) {
-                                Text(
-                                    text = "↕ Arraste para ajustar a altura",
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                Box(
+                                    modifier = Modifier
+                                        .size(width = 32.dp, height = 1.dp)
+                                        .background(
+                                            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f),
+                                            RoundedCornerShape(2.dp)
+                                        )
                                 )
                             }
                         }
@@ -327,6 +327,14 @@ fun EditScreen(navController: NavController, viewModel: SharedViewModel) {
                                 text = "Salvar Lista",
                                 style = MaterialTheme.typography.titleMedium,
                                 modifier = Modifier.padding(vertical = 8.dp)
+                            )
+                        }
+                        message?.let {
+                            Text(
+                                text = it,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = if (it.startsWith("Erro")) MaterialTheme.colorScheme.error
+                                else MaterialTheme.colorScheme.primary
                             )
                         }
                     }

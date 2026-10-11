@@ -57,23 +57,46 @@ import com.testfiles.util.loadMdFiles
 import com.testfiles.viewmodel.SharedViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.repeatOnLifecycle
 
 
 @Composable
 fun HomeScreen(navController: NavController, viewModel: SharedViewModel) {
     val context = LocalContext.current
-    var folderUri by remember { mutableStateOf<Uri?>(null) }
+    val lifecycleOwner = LocalLifecycleOwner.current
+    var folderUri by remember { mutableStateOf(PreferencesUtil.getSavedFolderUri(context)) }
     var folderName by remember { mutableStateOf("Listas") }
     var mdFiles by remember { mutableStateOf<List<Pair<String, Uri>>>(emptyList()) }
-    var showOpenFileButton by remember { mutableStateOf(true) }
+    var folderError by remember { mutableStateOf<String?>(null) }
 
-    LaunchedEffect(folderUri) {
-        folderName = withContext(Dispatchers.IO) {
-            folderUri?.let { uri ->
-                runCatching { DocumentFile.fromTreeUri(context, uri)?.name }
-                    .getOrNull()
-                    ?.takeIf { it.isNotBlank() }
-            } ?: "Listas"
+    // Reconsulta a pasta a cada retorno à Home ou ao aplicativo.
+    LaunchedEffect(lifecycleOwner, folderUri) {
+        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+            val uri = folderUri
+            if (uri == null) {
+                mdFiles = emptyList()
+                folderName = "Listas"
+                folderError = null
+            } else {
+                val result = withContext(Dispatchers.IO) {
+                    runCatching {
+                        val name = DocumentFile.fromTreeUri(context, uri)?.name
+                            ?.takeIf { it.isNotBlank() } ?: "Listas"
+                        var files = emptyList<Pair<String, Uri>>()
+                        loadMdFiles(context, uri) { files = it }
+                        name to files
+                    }
+                }
+                result.onSuccess { (name, files) ->
+                    folderName = name
+                    mdFiles = files
+                    folderError = null
+                }.onFailure {
+                    folderError = "Não foi possível atualizar os arquivos da pasta."
+                }
+            }
         }
     }
 
@@ -81,28 +104,16 @@ fun HomeScreen(navController: NavController, viewModel: SharedViewModel) {
         contract = ActivityResultContracts.OpenDocumentTree(),
         onResult = { uri ->
             uri?.let {
-                PreferencesUtil.saveFolderUri(context, it)
-                folderUri = it
                 context.contentResolver.takePersistableUriPermission(
                     it,
                     Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
                 )
-                loadMdFiles(context, it) { files ->
-                    mdFiles = files
-                }
+                PreferencesUtil.saveFolderUri(context, it)
+                folderUri = it
             }
         }
     )
 
-    LaunchedEffect(Unit) {
-        val savedUri = PreferencesUtil.getSavedFolderUri(context)
-        savedUri?.let {
-            folderUri = it
-            loadMdFiles(context, it) { files ->
-                mdFiles = files
-            }
-        }
-    }
 
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -122,7 +133,6 @@ fun HomeScreen(navController: NavController, viewModel: SharedViewModel) {
                 ) {
                     SolicitarAcessoCard {
                         folderPicker.launch(null)
-                        showOpenFileButton = true
                     }
                 }
             } else {
@@ -162,6 +172,13 @@ fun HomeScreen(navController: NavController, viewModel: SharedViewModel) {
 
                         }
 
+                        folderError?.let {
+                            Text(
+                                text = it,
+                                color = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.padding(bottom = 12.dp)
+                            )
+                        }
                         if (mdFiles.isEmpty()) {
                             Box(
                                 modifier = Modifier.fillMaxWidth().weight(1f),
