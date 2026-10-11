@@ -23,6 +23,9 @@ import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.testfiles.viewmodel.SharedViewModel
@@ -48,10 +51,10 @@ fun CompareAhpScreen(navController: NavController, viewModel: SharedViewModel) {
                 Text("Adicione pelo menos dois itens à lista para comparar.")
             } else {
                 val pair = pairs[page]
-                Text("${page + 1} de ${pairs.size} • ${answers.count { it != null }} respondidas")
                 Text("Qual item é mais importante?", style = MaterialTheme.typography.titleMedium)
                 Text("Deslize para escolher o item e a intensidade. Ao soltar, a resposta será salva e a próxima pergunta será exibida.")
 
+                Text("${page + 1} / ${pairs.size} respondidas")
 
                 key(page, pairs) {
                     val savedPosition = positionsX[page]?.let { x ->
@@ -73,7 +76,19 @@ fun CompareAhpScreen(navController: NavController, viewModel: SharedViewModel) {
                         if (page < pairs.lastIndex) page++
                     }
                 }
-                Text("Escala: 1 = igual; 3 = moderada; 5 = forte; 7 = muito forte; 9 = extrema.")
+                Text(buildAnnotatedString {
+                    append("Escala: ")
+                    listOf(
+                        1 to "igual", 3 to "moderada", 5 to "forte",
+                        7 to "muito forte", 9 to "extrema"
+                    ).forEachIndexed { index, (intensity, description) ->
+                        if (index > 0) append("; ")
+                        withStyle(SpanStyle(color = ahpIntensityColor(intensity))) {
+                            append("$intensity = $description")
+                        }
+                    }
+                    append(".")
+                })
                 Button(
                     onClick = {
                         viewModel.calcularRankingAhp(answers.map { requireNotNull(it) })
@@ -85,6 +100,15 @@ fun CompareAhpScreen(navController: NavController, viewModel: SharedViewModel) {
             }
         }
     }
+}
+
+private fun ahpIntensityColor(intensity: Int): Color = when (intensity) {
+    1 -> Color(0xFF43A047)
+    3 -> Color(0xFF9EAD32)
+    5 -> Color(0xFFFBC02D)
+    7 -> Color(0xFFFB8C00)
+    9 -> Color(0xFFE53935)
+    else -> error("Intensidade AHP inválida: $intensity")
 }
 
 internal data class AhpTouchSelection(val side: Int, val intensity: Int) {
@@ -124,14 +148,8 @@ internal fun AhpTouchArea(
     val levels = listOf(9, 7, 5, 3, 1)
     // Color follows height even when the middle zone records equality.
     val heightIntensity = position?.let { ahpSelectionAt(0f, it.y, 1f, 1f).intensity }
-    val selectionColor = when (heightIntensity) {
-        1 -> Color(0xFF43A047)
-        3 -> Color(0xFF9EAD32)
-        5 -> Color(0xFFFBC02D)
-        7 -> Color(0xFFFB8C00)
-        9 -> Color(0xFFE53935)
-        else -> MaterialTheme.colorScheme.onSurface
-    }
+    val selectionColor = heightIntensity?.let { ahpIntensityColor(it) }
+        ?: MaterialTheme.colorScheme.onSurface
     val markerColor = selectionColor.copy(alpha = 0.5f)
     val markerOutline = selectionColor.copy(alpha = 0.65f)
     val activeLabel = selection?.let {
