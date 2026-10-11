@@ -83,6 +83,10 @@ class SharedViewModel : ViewModel() {
         _selectedFileUri.value = uri
     }
 
+    fun startNewList() {
+        _selectedFileUri.value = null
+    }
+
     // Atualiza o conteúdo processado
     fun processData(data: String) {
         viewModelScope.launch {

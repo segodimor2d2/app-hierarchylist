@@ -33,6 +33,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -55,9 +56,6 @@ import androidx.navigation.NavController
 import com.testfiles.util.PreferencesUtil
 import com.testfiles.util.loadMdFiles
 import com.testfiles.viewmodel.SharedViewModel
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -188,17 +186,27 @@ fun HomeScreen(navController: NavController, viewModel: SharedViewModel) {
                                     )
                                     CreateListButton(
                                         folderUri = folderUri,
-                                        context = context,
-                                        mdFiles = mdFiles,
-                                        setMdFiles = { mdFiles = it },
                                         navController = navController,
                                         viewModel = viewModel
                                     )
                                 }
                             }
                         } else {
-                            FileGridView(
-                                mdFiles = mdFiles,
+                            val (completedFiles, listFiles) = mdFiles.partition { it.first.startsWith("done_") }
+                            FileSection(
+                                title = "Listas",
+                                emptyMessage = "Nenhuma lista para comparar.",
+                                files = listFiles,
+                                modifier = Modifier.fillMaxWidth().weight(1f),
+                                navController = navController,
+                                viewModel = viewModel
+                            )
+                            HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
+                            FileSection(
+                                title = "Listas concluídas",
+                                emptyMessage = "Nenhuma lista concluída.",
+                                files = completedFiles,
+                                modifier = Modifier.fillMaxWidth().weight(1f),
                                 navController = navController,
                                 viewModel = viewModel
                             )
@@ -214,9 +222,6 @@ fun HomeScreen(navController: NavController, viewModel: SharedViewModel) {
                         ) {
                             CreateListButton(
                                 folderUri = folderUri,
-                                context = context,
-                                mdFiles = mdFiles,
-                                setMdFiles = { mdFiles = it },
                                 navController = navController,
                                 viewModel = viewModel
                             )
@@ -272,6 +277,32 @@ fun SolicitarAcessoCard(
 
 
 
+@Composable
+private fun FileSection(
+    title: String,
+    emptyMessage: String,
+    files: List<Pair<String, Uri>>,
+    modifier: Modifier,
+    navController: NavController,
+    viewModel: SharedViewModel
+) {
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Text(title, style = MaterialTheme.typography.titleMedium)
+        if (files.isEmpty()) {
+            Text(
+                emptyMessage,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        } else {
+            FileGridView(files, navController, viewModel)
+        }
+    }
+}
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun FileGridView(
@@ -324,28 +355,14 @@ fun FileGridView(
 @Composable
 fun CreateListButton(
     folderUri: Uri?,
-    context: android.content.Context,
-    mdFiles: List<Pair<String, Uri>>,
-    setMdFiles: (List<Pair<String, Uri>>) -> Unit,
     navController: NavController,
     viewModel: SharedViewModel
 ) {
     Button(
         onClick = {
-            folderUri?.let { folder ->
-                val formatter = SimpleDateFormat("yyMMddHHmmss", Locale.getDefault())
-                val fileName = formatter.format(Date()) + ".md"
-                val docFolder = DocumentFile.fromTreeUri(context, folder)
-                val newFile = docFolder?.createFile("text/markdown", fileName)
-
-                newFile?.uri?.let { uri ->
-                    context.contentResolver.openOutputStream(uri)?.use { output ->
-                        output.write("".toByteArray())
-                    }
-                    setMdFiles(mdFiles + (fileName to uri))
-                    viewModel.selectFile(uri)
-                    navController.navigate("edit")
-                }
+            if (folderUri != null) {
+                viewModel.startNewList()
+                navController.navigate("edit")
             }
         },
         modifier = Modifier

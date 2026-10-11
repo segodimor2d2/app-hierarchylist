@@ -37,6 +37,8 @@ import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.semantics.setProgress
 import com.testfiles.util.PreferencesUtil
+import androidx.documentfile.provider.DocumentFile
+import androidx.compose.material.icons.filled.Delete
 
 
 @OptIn(ExperimentalLayoutApi::class, androidx.compose.foundation.ExperimentalFoundationApi::class)
@@ -49,6 +51,40 @@ fun EditScreen(navController: NavController, viewModel: SharedViewModel) {
     var isLoading by remember { mutableStateOf(true) }
     var message by remember { mutableStateOf<String?>(null) }
     var showMethodHelp by rememberSaveable { mutableStateOf(false) }
+    var listName by rememberSaveable { mutableStateOf("") }
+    var showDeleteConfirmation by remember { mutableStateOf(false) }
+
+    fun saveList(): Boolean {
+        return try {
+            val existingUri = viewModel.selectedFileUri.value
+            val document = if (existingUri != null) {
+                DocumentFile.fromSingleUri(context, existingUri)
+                    ?: error("Não foi possível acessar o arquivo.")
+            } else {
+                val name = listName.trim().removeSuffix(".md")
+                require(name.isNotBlank()) { "Informe o nome da lista." }
+                require(name.none { it == '/' || it == '\\' || it.isISOControl() }) {
+                    "O nome não pode conter barras ou caracteres de controle."
+                }
+                val folderUri = PreferencesUtil.getSavedFolderUri(context)
+                    ?: error("Selecione uma pasta para salvar a lista.")
+                val folder = DocumentFile.fromTreeUri(context, folderUri)
+                    ?: error("Não foi possível acessar a pasta.")
+                val fileName = "$name.md"
+                require(folder.findFile(fileName) == null) { "Já existe uma lista com esse nome." }
+                folder.createFile("text/markdown", fileName)
+                    ?: error("Não foi possível criar a lista.")
+            }
+            // Guarda a URI também em caso de falha de escrita, permitindo tentar novamente.
+            viewModel.selectFile(document.uri)
+            listName = document.name.orEmpty()
+            message = saveFileContent(context, document.uri, fileContent)
+            !message.orEmpty().startsWith("Erro")
+        } catch (e: Exception) {
+            message = "Erro: ${e.message}"
+            false
+        }
+    }
     val varMetodo = viewModel.varMetodo
     val editorRequester = remember { BringIntoViewRequester() }
     var editorFocused by remember { mutableStateOf(false) }
@@ -102,10 +138,44 @@ fun EditScreen(navController: NavController, viewModel: SharedViewModel) {
     }
 
     // Carrega o conteúdo inicial do arquivo
-    LaunchedEffect(fileUri) {
+    LaunchedEffect(Unit) {
         isLoading = true
-        fileContent = loadFileContent(context, fileUri)
+        if (fileUri == null) {
+            fileContent = ""
+            listName = ""
+        } else {
+            listName = runCatching { fileUri?.let { DocumentFile.fromSingleUri(context, it)?.name } }
+                .getOrNull().orEmpty()
+            fileContent = loadFileContent(context, fileUri)
+        }
         isLoading = false
+    }
+
+    if (showDeleteConfirmation) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirmation = false },
+            title = { Text("Excluir lista?") },
+            text = { Text("O arquivo $listName será excluído da pasta.") },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirmation = false }) { Text("Cancelar") }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    showDeleteConfirmation = false
+                    try {
+                        val document = fileUri?.let { DocumentFile.fromSingleUri(context, it) }
+                        if (document?.delete() == true) {
+                            viewModel.startNewList()
+                            navController.popBackStack()
+                        } else {
+                            message = "Erro: Não foi possível excluir a lista."
+                        }
+                    } catch (e: Exception) {
+                        message = "Erro ao excluir: ${e.message}"
+                    }
+                }) { Text("Excluir", color = MaterialTheme.colorScheme.error) }
+            }
+        )
     }
 
     Surface(
@@ -142,10 +212,39 @@ fun EditScreen(navController: NavController, viewModel: SharedViewModel) {
                             .bringIntoViewRequester(editorRequester),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Text(
-                            text = "Edit List",
-                            style = MaterialTheme.typography.titleLarge
-                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Edit List",
+                                style = MaterialTheme.typography.titleLarge,
+                                modifier = Modifier.weight(1f)
+                            )
+                            IconButton(
+                                onClick = { showDeleteConfirmation = true },
+                                enabled = fileUri != null
+                            ) {
+                                Icon(
+                                    Icons.Default.Delete,
+                                    contentDescription = "Excluir lista",
+                                    tint = if (fileUri != null) MaterialTheme.colorScheme.error
+                                    else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                                )
+                            }
+                        }
+                        if (fileUri == null) {
+                            OutlinedTextField(
+                                value = listName,
+                                onValueChange = { listName = it },
+                                label = { Text("Nome da lista") },
+                                supportingText = { Text("O arquivo será salvo com a extensão .md") },
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        } else {
+                            Text(listName, style = MaterialTheme.typography.titleMedium)
+                        }
                         TextField(
                             value = fileContent,
                             onValueChange = { fileContent = it },
@@ -219,7 +318,7 @@ fun EditScreen(navController: NavController, viewModel: SharedViewModel) {
                         }
                         OutlinedButton(
                             onClick = {
-                                message = saveFileContent(context, fileUri, fileContent)
+                                saveList()
                             },
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(12.dp)
@@ -296,9 +395,10 @@ fun EditScreen(navController: NavController, viewModel: SharedViewModel) {
                         }
                         Button(
                             onClick = {
-                                message = saveFileContent(context, fileUri, fileContent)
-                                viewModel.processData(fileContent)
-                                navController.navigate(if (viewModel.varMetodo == "ahp") "compare_ahp" else "compare")
+                                if (saveList()) {
+                                    viewModel.processData(fileContent)
+                                    navController.navigate(if (viewModel.varMetodo == "ahp") "compare_ahp" else "compare")
+                                }
                             },
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(12.dp)
