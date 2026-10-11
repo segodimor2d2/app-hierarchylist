@@ -124,6 +124,11 @@ internal fun AhpTouchArea(
     }
     val markerColor = selectionColor.copy(alpha = 0.5f)
     val markerOutline = selectionColor.copy(alpha = 0.65f)
+    val labelCenters = listOf(Offset(0.2f, 0.5f), Offset(0.5f, 0.5f), Offset(0.8f, 0.5f))
+    val nearbyLabel = position?.let { point ->
+        labelCenters.indices.minByOrNull { (point - labelCenters[it]).getDistance() }
+            ?.takeIf { (point - labelCenters[it]).getDistance() <= 0.22f }
+    }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(
             text = when (selection?.side) {
@@ -156,6 +161,7 @@ internal fun AhpTouchArea(
             modifier = Modifier.fillMaxWidth().aspectRatio(1f)
                 .clip(RoundedCornerShape(8.dp))
                 .background(MaterialTheme.colorScheme.surfaceVariant)
+                .background(if (position != null) selectionColor.copy(alpha = 0.10f) else Color.Transparent)
                 .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp))
                 .semantics {
                     customActions = listOf(CustomAccessibilityAction("Igualmente importantes") {
@@ -198,11 +204,12 @@ internal fun AhpTouchArea(
                 modifier = Modifier.fillMaxWidth().align(Alignment.Center),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                listOf(first to 0.4f, "=" to 0.2f, second to 0.4f).forEach { (label, weight) ->
+                listOf(first to 0.4f, "=" to 0.2f, second to 0.4f).forEachIndexed { index, (label, weight) ->
                     Text(
                         label,
                         modifier = Modifier.weight(weight).padding(8.dp),
                         textAlign = TextAlign.Center,
+                        color = if (index == nearbyLabel) selectionColor else Color.White,
                         style = MaterialTheme.typography.titleMedium
                     )
                 }

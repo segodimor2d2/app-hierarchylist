@@ -29,6 +29,14 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.draggable
+import androidx.compose.foundation.gestures.rememberDraggableState
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.ProgressBarRangeInfo
+import androidx.compose.ui.semantics.progressBarRangeInfo
+import androidx.compose.ui.semantics.setProgress
+import com.testfiles.util.PreferencesUtil
 
 
 @OptIn(ExperimentalLayoutApi::class, androidx.compose.foundation.ExperimentalFoundationApi::class)
@@ -45,6 +53,10 @@ fun EditScreen(navController: NavController, viewModel: SharedViewModel) {
     val editorRequester = remember { BringIntoViewRequester() }
     var editorFocused by remember { mutableStateOf(false) }
     val keyboardVisible = WindowInsets.isImeVisible
+    val density = LocalDensity.current
+    var editorHeight by rememberSaveable {
+        mutableStateOf(PreferencesUtil.getEditorHeight(context))
+    }
 
     LaunchedEffect(keyboardVisible, editorFocused) {
         if (keyboardVisible && editorFocused) {
@@ -139,10 +151,7 @@ fun EditScreen(navController: NavController, viewModel: SharedViewModel) {
                             onValueChange = { fileContent = it },
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .heightIn(
-                                    min = if (keyboardVisible) 120.dp else 160.dp,
-                                    max = if (keyboardVisible) 120.dp else 280.dp
-                                )
+                                .height(editorHeight.dp)
                                 .onFocusChanged { editorFocused = it.isFocused },
                             label = { Text("Digite algo") },
                             supportingText = {
@@ -165,6 +174,49 @@ fun EditScreen(navController: NavController, viewModel: SharedViewModel) {
                                 cursorColor = MaterialTheme.colorScheme.primary
                             )
                         )
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = MaterialTheme.colorScheme.surfaceContainer,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(min = 48.dp)
+                                .draggable(
+                                    orientation = Orientation.Vertical,
+                                    state = rememberDraggableState { delta ->
+                                        editorHeight = (editorHeight + with(density) { delta.toDp().value })
+                                            .coerceIn(
+                                                PreferencesUtil.MIN_EDITOR_HEIGHT,
+                                                PreferencesUtil.MAX_EDITOR_HEIGHT
+                                            )
+                                    },
+                                    onDragStopped = {
+                                        PreferencesUtil.saveEditorHeight(context, editorHeight)
+                                    }
+                                )
+                                .semantics {
+                                    contentDescription = "Ajustar altura do campo de texto"
+                                    progressBarRangeInfo = ProgressBarRangeInfo(
+                                        editorHeight,
+                                        PreferencesUtil.MIN_EDITOR_HEIGHT..PreferencesUtil.MAX_EDITOR_HEIGHT
+                                    )
+                                    setProgress { height ->
+                                        editorHeight = height.coerceIn(
+                                            PreferencesUtil.MIN_EDITOR_HEIGHT,
+                                            PreferencesUtil.MAX_EDITOR_HEIGHT
+                                        )
+                                        PreferencesUtil.saveEditorHeight(context, editorHeight)
+                                        true
+                                    }
+                                }
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Text(
+                                    text = "↕ Arraste para ajustar a altura",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
                         OutlinedButton(
                             onClick = {
                                 message = saveFileContent(context, fileUri, fileContent)
