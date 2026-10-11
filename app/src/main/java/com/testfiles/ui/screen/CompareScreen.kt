@@ -1,314 +1,191 @@
 package com.testfiles.ui.screen
 
-import androidx.compose.animation.expandHorizontally
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.consumeAllChanges
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.semantics.customActions
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.testfiles.viewmodel.SharedViewModel
 import kotlinx.coroutines.launch
-import kotlin.math.abs
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CompareScreen(
-    navController: NavController,
-    viewModel: SharedViewModel
-) {
+fun CompareScreen(navController: NavController, viewModel: SharedViewModel) {
     val itemPairs by viewModel.itemPairs.collectAsState()
-    var showSweepSpace by remember { mutableStateOf(true) }
-
-    val respostas = remember {
-        mutableStateListOf<Pair<Boolean, Boolean>?>().apply {
-            repeat(itemPairs.size) { add(null) }
-        }
+    var respostas by rememberSaveable(itemPairs) {
+        mutableStateOf(List<Int?>(itemPairs.size) { null })
     }
-
     val scope = rememberCoroutineScope()
-    val total = itemPairs.size
 
-    Surface(
-        modifier = Modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .systemBarsPadding()
-                .padding(horizontal = 16.dp)
+    Surface(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier.fillMaxSize().systemBarsPadding().padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            if (total > 0) {
-                val pagerState = rememberPagerState(initialPage = 0, pageCount = { total })
-                val currentPage = pagerState.currentPage
-
-                LaunchedEffect(currentPage) {
-                    if (respostas[currentPage] == null) {
-                        respostas[currentPage] = Pair(false, false)
-                    }
-                }
-
-                val allAnswered = respostas.none { it == null }
-
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(bottom = 90.dp) // espaço para o botão fixo
-                        .align(Alignment.TopStart)
-                ) {
+            TextButton(onClick = { navController.popBackStack() }) { Text("Voltar") }
+            Text("Processo de Hierarquia MBC", style = MaterialTheme.typography.titleLarge)
+            if (itemPairs.isEmpty()) {
+                Text("Adicione pelo menos dois itens à lista para comparar.")
+            } else {
+                val pagerState = rememberPagerState(pageCount = { itemPairs.size })
+                HorizontalPager(
+                    state = pagerState,
+                    modifier = Modifier.weight(1f).fillMaxWidth(),
+                    verticalAlignment = Alignment.Top
+                ) { page ->
+                    val pair = itemPairs[page]
                     Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 24.dp)
+                        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .clickable { navController.popBackStack() }
-                                .padding(vertical = 16.dp)
-                        ) {
-                            Icon(Icons.Default.ArrowBack, contentDescription = "Voltar")
-                        }
-
-                        Text(
-                            text = "Proceso de Hierarquia MBC",
-                            style = MaterialTheme.typography.titleLarge,
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(26.dp))
-
-                    Text(
-                        text = "Qual item é o mais importante?",
-                        style = MaterialTheme.typography.headlineMedium,
-                        modifier = Modifier.align(Alignment.CenterHorizontally),
-                        textAlign = TextAlign.Center
-                    )
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Text(
-                        text = "Se os dois forem igualmente importantes, selecione ambos.",
-                        style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.outline,
-                        modifier = Modifier.fillMaxWidth(),
-                        textAlign = TextAlign.Center
-                    )
-
-                    Spacer(modifier = Modifier.height(26.dp))
-
-                    Box(modifier = Modifier.fillMaxWidth()) {
-                        HorizontalPager(state = pagerState) { page ->
-                            val currentPair = itemPairs[page]
-                            val currentSelection = respostas[page] ?: Pair(false, false)
-                            val (firstSelected, secondSelected) = currentSelection
-
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 4.dp),
-                                verticalArrangement = Arrangement.spacedBy(22.dp)
-                            ) {
-                                Text(
-                                    text = "${page + 1} de $total",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    modifier = Modifier
-                                        .align(Alignment.End)
-                                        .padding(end = 16.dp)
+                        Text("${page + 1} de ${itemPairs.size}", style = MaterialTheme.typography.titleMedium)
+                        Text("Qual item é o mais importante?", style = MaterialTheme.typography.headlineSmall)
+                        listOf(-1 to "A: ${pair.first}", 1 to "B: ${pair.second}").forEach { (value, label) ->
+                            OutlinedButton(
+                                onClick = {
+                                    respostas = respostas.toMutableList().also { it[page] = value }
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = ButtonDefaults.outlinedButtonColors(
+                                    containerColor = if (respostas[page] == value || respostas[page] == 0)
+                                        MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface
                                 )
-
-                                Button(
-                                    onClick = {
-                                        respostas[page] = currentSelection.copy(first = !firstSelected)
-                                    },
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .align(Alignment.CenterHorizontally),
-                                    shape = RoundedCornerShape(50.dp),
-                                    border = if (firstSelected) null else BorderStroke(2.dp, MaterialTheme.colorScheme.primary),
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = if (firstSelected)
-                                            MaterialTheme.colorScheme.primary else Color.Transparent,
-                                        contentColor = if (firstSelected)
-                                            MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary
-                                    )
-                                ) {
-                                    Text(
-                                        text = currentPair.first,
-                                        style = MaterialTheme.typography.bodyLarge,
-                                        modifier = Modifier.padding(16.dp)
-                                    )
-                                }
-
-                                Button(
-                                    onClick = {
-                                        respostas[page] = currentSelection.copy(second = !secondSelected)
-                                    },
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .align(Alignment.CenterHorizontally),
-                                    shape = RoundedCornerShape(50.dp),
-                                    border = if (secondSelected) null else BorderStroke(2.dp, MaterialTheme.colorScheme.primary),
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = if (secondSelected)
-                                            MaterialTheme.colorScheme.primary else Color.Transparent,
-                                        contentColor = if (secondSelected)
-                                            MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary
-                                    )
-                                ) {
-                                    Text(
-                                        text = currentPair.second,
-                                        style = MaterialTheme.typography.bodyLarge,
-                                        modifier = Modifier.padding(16.dp)
-                                    )
-                                }
-                            }
+                            ) { Text(label) }
                         }
-                    }
-
-
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .pointerInput(pagerState.currentPage) {
-                                detectDragGestures { change, dragAmount ->
-                                    change.consumeAllChanges()
-                                    val (dx, dy) = dragAmount
-                                    if (abs(dx) > abs(dy)) {
-                                        val targetPage = when {
-                                            dx < -10 -> pagerState.currentPage + 1
-                                            dx > 10 -> pagerState.currentPage - 1
-                                            else -> pagerState.currentPage
-                                        }.coerceIn(0, total - 1)
-
-                                        if (targetPage != pagerState.currentPage) {
-                                            scope.launch {
-                                                pagerState.animateScrollToPage(targetPage)
-                                            }
-                                        }
-                                    }
+                        Text("Deslize na área abaixo. Ao soltar, sua resposta será salva e a próxima pergunta será exibida.")
+                        MbcTouchArea(
+                            first = pair.first,
+                            second = pair.second,
+                            savedAnswer = respostas[page],
+                            enabled = !pagerState.isScrollInProgress,
+                            onAnswer = { answer ->
+                                respostas = respostas.toMutableList().also { it[page] = answer }
+                                if (page < itemPairs.lastIndex) {
+                                    scope.launch { pagerState.animateScrollToPage(page + 1) }
                                 }
                             }
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth(),
-                            horizontalArrangement = Arrangement.Center,
-                        ) {
-                            repeat(total) { index ->
-                                val isSelected = index == pagerState.currentPage
-                                val color = if (isSelected) MaterialTheme.colorScheme.primary else Color.Gray.copy(alpha = 0.3f)
-                                Box(
-                                    modifier = Modifier
-                                        .padding(horizontal = 4.dp, vertical = 22.dp)
-                                        .size(if (isSelected) 10.dp else 8.dp)
-                                        .clip(RoundedCornerShape(percent = 50))
-                                        .background(color)
-                                )
-                            }
-                        }
-                    }
-
-                }
-
-
-                // SweepSpace fixo acima do botão
-                if (showSweepSpace) {
-                    Box(
-                        modifier = Modifier
-                            .align(Alignment.BottomCenter)
-                            .fillMaxWidth()
-                            .padding(bottom = 90.dp) // espaço entre sweepSpace e botão
-                            .height(180.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(MaterialTheme.colorScheme.background)
-                            .border(1.dp, Color.Gray.copy(alpha = 0.05f), RoundedCornerShape(8.dp))
-                            .pointerInput(pagerState.currentPage) {
-                                detectDragGestures { change, dragAmount ->
-                                    change.consumeAllChanges()
-                                    val (dx, dy) = dragAmount
-                                    val absDx = abs(dx)
-                                    val absDy = abs(dy)
-
-                                    val isHorizontal = absDx > absDy
-                                    val isVertical = absDy > absDx
-                                    val nextPage = pagerState.currentPage + 1
-
-                                    if (isHorizontal) {
-                                        respostas[pagerState.currentPage] = Pair(true, true)
-                                    }
-
-                                    if (isVertical) {
-                                        respostas[pagerState.currentPage] = if (dy < 0) Pair(true, false) else Pair(false, true)
-                                    }
-
-                                    if (nextPage < total) {
-                                        scope.launch {
-                                            pagerState.animateScrollToPage(nextPage)
-                                        }
-                                    }
-                                }
-                            },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "Deslize aqui para escolher",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = Color.Gray.copy(alpha = 0.05f),
-                            modifier = Modifier.padding(vertical = 8.dp)
                         )
                     }
                 }
-
-
-                // Botão fixo no final da tela
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .fillMaxWidth()
-                        .padding(vertical = 16.dp)
-                ) {
-                    Button(
-                        onClick = {
-                            val finalRespostas = respostas.map {
-                                when (it) {
-                                    Pair(true, false) -> -1
-                                    Pair(false, true) -> 1
-                                    else -> 0
-                                }
-                            }
-                            println("Respostas: $finalRespostas")
-                            viewModel.calcularRankingCondorcet(finalRespostas)
-                            navController.navigate("ranking")
-                        },
-                        enabled = allAnswered,
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(8.dp)
-                    ) {
-                        Text(
-                            text = "Processar",
-                            style = MaterialTheme.typography.titleMedium,
-                            modifier = Modifier.padding(vertical = 8.dp)
-                        )
-                    }
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    TextButton(
+                        onClick = { scope.launch { pagerState.animateScrollToPage(pagerState.currentPage - 1) } },
+                        enabled = pagerState.currentPage > 0 && !pagerState.isScrollInProgress
+                    ) { Text("Anterior") }
+                    TextButton(
+                        onClick = { scope.launch { pagerState.animateScrollToPage(pagerState.currentPage + 1) } },
+                        enabled = pagerState.currentPage < itemPairs.lastIndex && !pagerState.isScrollInProgress
+                    ) { Text("Próxima") }
                 }
+                Button(
+                    onClick = {
+                        viewModel.calcularRankingCondorcet(respostas)
+                        navController.navigate("ranking")
+                    },
+                    enabled = respostas.all { it != null },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(8.dp)
+                ) { Text("Processar", modifier = Modifier.padding(vertical = 8.dp)) }
             }
         }
+    }
+}
+
+@Composable
+internal fun MbcTouchArea(
+    first: String,
+    second: String,
+    savedAnswer: Int?,
+    enabled: Boolean = true,
+    onAnswer: (Int) -> Unit
+) {
+    var preview by remember(first, second) { mutableStateOf<Int?>(null) }
+    val answerCallback by rememberUpdatedState(onAnswer)
+    val labels = listOf(first, "Igualmente importantes", second)
+    val values = listOf(-1, 0, 1)
+    val highlighted = preview ?: savedAnswer
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth().height(160.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .border(BorderStroke(1.dp, MaterialTheme.colorScheme.outline), RoundedCornerShape(8.dp))
+                .semantics {
+                    customActions = if (enabled) labels.mapIndexed { index, label ->
+                        CustomAccessibilityAction(label) { answerCallback(values[index]); true }
+                    } else emptyList()
+                }
+                .pointerInput(first, second, enabled) {
+                    if (!enabled) return@pointerInput
+                    awaitEachGesture {
+                        val down = awaitFirstDown()
+                        down.consume()
+                        preview = mbcAnswerAt(down.position.x, size.width.toFloat())
+                        try {
+                            while (true) {
+                                val event = awaitPointerEvent()
+                                val touch = event.changes.firstOrNull { it.id == down.id } ?: break
+                                preview = mbcAnswerAt(touch.position.x, size.width.toFloat())
+                                touch.consume()
+                                if (!touch.pressed) {
+                                    if (touch.previousPressed) answerCallback(requireNotNull(preview))
+                                    break
+                                }
+                            }
+                        } finally {
+                            preview = null
+                        }
+                    }
+                }
+        ) {
+            labels.forEachIndexed { index, label ->
+                val isHighlighted = highlighted == values[index]
+                Box(
+                    modifier = Modifier.weight(1f).fillMaxHeight()
+                        .background(if (isHighlighted) MaterialTheme.colorScheme.primaryContainer
+                            else MaterialTheme.colorScheme.surfaceVariant)
+                        .border(0.5.dp, MaterialTheme.colorScheme.outline)
+                        .padding(8.dp),
+                    contentAlignment = Alignment.Center
+                ) { Text(label, textAlign = TextAlign.Center) }
+            }
+        }
+        Text(
+            text = when (highlighted) {
+                -1 -> first
+                0 -> "Igualmente importantes"
+                1 -> second
+                else -> "Toque ou deslize para escolher"
+            },
+            modifier = Modifier.fillMaxWidth(),
+            textAlign = TextAlign.Center,
+            style = MaterialTheme.typography.titleMedium
+        )
+    }
+}
+
+internal fun mbcAnswerAt(x: Float, width: Float): Int {
+    require(width > 0)
+    return when {
+        x < width / 3f -> -1
+        x < width * 2f / 3f -> 0
+        else -> 1
     }
 }

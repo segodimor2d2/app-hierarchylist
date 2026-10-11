@@ -862,7 +862,7 @@ eu quero duplicar ui/screen/CompareScreen.kt para ao escolher MBC ou AHP e eu po
 
 ---
 $$$$
-
+na tela MBC,
 para cada slide de perguntas,
 eu quero criar uma area retangular que reconhece o touch,
 a area horizontal vai ser dividida em 3 partes,
@@ -872,9 +872,15 @@ a direita será a opçao B,
 ao deslizar na area,
 um texto embaixo da area vai mostrar a que posiçao corresponde o lugar onde estou deslizando o dedo na area,
 se eu soltar o dedo da area, o valor vai ser salvo na resposta
-e vai pulata pro proximo slide.
+e vai continuar pro proximo slide.
 
-seja alterado
+me confirma se vc ente deu
+
+para cada slide squero eu mude,
+opçao A, pelo item da lista que corresponde a opçao A,
+opçao B, pelo item da lista que corresponde a opçao B,
+
+
 
 ---
 $$$$
