@@ -61,27 +61,22 @@ fun CompareScreen(navController: NavController, viewModel: SharedViewModel) {
                         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Text("${page + 1} de ${itemPairs.size}", style = MaterialTheme.typography.titleMedium)
+                        Text("${page + 1} / ${itemPairs.size} respondidas", style = MaterialTheme.typography.titleMedium)
                         Text("Qual item é o mais importante?", style = MaterialTheme.typography.headlineSmall)
-                        listOf(-1 to "A: ${pair.first}", 1 to "B: ${pair.second}").forEach { (value, label) ->
-                            OutlinedButton(
-                                onClick = {
-                                    respostas = respostas.toMutableList().also { it[page] = value }
-                                    positionsX = positionsX.toMutableList().also { it[page] = if (value == -1) 0.2f else 0.8f }
-                                },
-                                modifier = Modifier.fillMaxWidth(),
-                                colors = ButtonDefaults.outlinedButtonColors(
-                                    containerColor = if (respostas[page] == value || respostas[page] == 0)
-                                        MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface
-                                )
-                            ) { Text(label) }
-                        }
                         Text("Deslize na área abaixo. Ao soltar, sua resposta será salva e a próxima pergunta será exibida.")
                         MbcTouchArea(
                             first = pair.first,
                             second = pair.second,
                             savedPosition = positionsX[page],
                             enabled = !pagerState.isScrollInProgress,
+                            canGoPrevious = page > 0 && !pagerState.isScrollInProgress,
+                            canGoNext = page < itemPairs.lastIndex && !pagerState.isScrollInProgress,
+                            onPrevious = {
+                                scope.launch { pagerState.animateScrollToPage(page - 1) }
+                            },
+                            onNext = {
+                                scope.launch { pagerState.animateScrollToPage(page + 1) }
+                            },
                             onAnswer = { position ->
                                 positionsX = positionsX.toMutableList().also { it[page] = position }
                                 respostas = respostas.toMutableList().also { it[page] = mbcAnswerAt(position, 1f) }
@@ -91,16 +86,6 @@ fun CompareScreen(navController: NavController, viewModel: SharedViewModel) {
                             }
                         )
                     }
-                }
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    TextButton(
-                        onClick = { scope.launch { pagerState.animateScrollToPage(pagerState.currentPage - 1) } },
-                        enabled = pagerState.currentPage > 0 && !pagerState.isScrollInProgress
-                    ) { Text("Anterior") }
-                    TextButton(
-                        onClick = { scope.launch { pagerState.animateScrollToPage(pagerState.currentPage + 1) } },
-                        enabled = pagerState.currentPage < itemPairs.lastIndex && !pagerState.isScrollInProgress
-                    ) { Text("Próxima") }
                 }
                 Button(
                     onClick = {
@@ -122,6 +107,10 @@ internal fun MbcTouchArea(
     second: String,
     savedPosition: Float?,
     enabled: Boolean = true,
+    canGoPrevious: Boolean,
+    canGoNext: Boolean,
+    onPrevious: () -> Unit,
+    onNext: () -> Unit,
     onAnswer: (Float) -> Unit
 ) {
     var preview by remember(first, second) { mutableStateOf<Float?>(null) }
@@ -132,18 +121,38 @@ internal fun MbcTouchArea(
     val selection = position?.let { mbcAnswerAt(it, 1f) }
     val selectionColor = MaterialTheme.colorScheme.primary
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(
-            text = when (selection) {
-                -1 -> first
-                0 -> "Igualmente importantes"
-                1 -> second
-                else -> "Toque ou deslize para escolher"
-            },
+
+
+        Row(
             modifier = Modifier.fillMaxWidth(),
-            textAlign = TextAlign.Center,
-            style = MaterialTheme.typography.titleMedium,
-            color = selectionColor
-        )
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            TextButton(
+                onClick = onPrevious,
+                enabled = canGoPrevious,
+                modifier = Modifier.weight(1f)
+            ) { Text("Anterior") }
+
+            Text(
+                text = when (selection) {
+                    -1 -> first
+                    0 -> "Igualmente importantes"
+                    1 -> second
+                    else -> "Toque ou deslize para escolher"
+                },
+                modifier = Modifier.weight(1f),
+                textAlign = TextAlign.Center,
+                style = MaterialTheme.typography.titleMedium,
+                color = selectionColor
+            )
+
+            TextButton(
+                onClick = onNext,
+                enabled = canGoNext,
+                modifier = Modifier.weight(1f)
+            ) { Text("Próxima") }
+        }
+
         Box(
             modifier = Modifier.fillMaxWidth().height(160.dp)
                 .clip(RoundedCornerShape(8.dp))

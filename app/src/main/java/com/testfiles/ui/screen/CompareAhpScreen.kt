@@ -40,64 +40,75 @@ fun CompareAhpScreen(navController: NavController, viewModel: SharedViewModel) {
 
     Surface(modifier = Modifier.fillMaxSize()) {
         Column(
-            modifier = Modifier.fillMaxSize().systemBarsPadding().padding(16.dp)
-                .verticalScroll(rememberScrollState()),
+            modifier = Modifier.fillMaxSize().systemBarsPadding().padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            TextButton(onClick = { navController.popBackStack() }) { Text("Voltar") }
-            Text("Processo de Hierarquia AHP", style = MaterialTheme.typography.titleLarge)
-            Text("Compare a importância dos itens em relação ao mesmo objetivo.")
-            if (pairs.isEmpty()) {
-                Text("Adicione pelo menos dois itens à lista para comparar.")
-            } else {
-                val pair = pairs[page]
-                Text("Qual item é mais importante?", style = MaterialTheme.typography.titleMedium)
-                Text("Deslize para escolher o item e a intensidade. Ao soltar, a resposta será salva e a próxima pergunta será exibida.")
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                TextButton(onClick = { navController.popBackStack() }) { Text("Voltar") }
+                Text("Processo de Hierarquia AHP", style = MaterialTheme.typography.titleLarge)
+                Text("Compare a importância dos itens em relação ao mesmo objetivo.")
+                if (pairs.isEmpty()) {
+                    Text("Adicione pelo menos dois itens à lista para comparar.")
+                } else {
+                    val pair = pairs[page]
+                    Text("Qual item é mais importante?", style = MaterialTheme.typography.titleMedium)
+                    Text("Deslize para escolher o item e a intensidade. Ao soltar, a resposta será salva e a próxima pergunta será exibida.")
 
-                Text("${page + 1} / ${pairs.size} respondidas")
+                    Text("${page + 1} / ${pairs.size} respondidas")
 
-                key(page, pairs) {
-                    val savedPosition = positionsX[page]?.let { x ->
-                        positionsY[page]?.let { y -> Offset(x, y) }
-                    }
-                    AhpTouchArea(
-                        first = pair.first,
-                        second = pair.second,
-                        savedPosition = savedPosition,
-                        canGoPrevious = page > 0,
-                        canGoNext = page < pairs.lastIndex,
-                        onPrevious = { if (page > 0) page-- },
-                        onNext = { if (page < pairs.lastIndex) page++ }
-                    ) { position ->
-                        val ratio = ahpSelectionAt(position.x, position.y, 1f, 1f).ratio
-                        answers = answers.toMutableList().also { it[page] = ratio }
-                        positionsX = positionsX.toMutableList().also { it[page] = position.x }
-                        positionsY = positionsY.toMutableList().also { it[page] = position.y }
-                        if (page < pairs.lastIndex) page++
-                    }
-                }
-                Text(buildAnnotatedString {
-                    append("Escala: ")
-                    listOf(
-                        1 to "igual", 3 to "moderada", 5 to "forte",
-                        7 to "muito forte", 9 to "extrema"
-                    ).forEachIndexed { index, (intensity, description) ->
-                        if (index > 0) append("; ")
-                        withStyle(SpanStyle(color = ahpIntensityColor(intensity))) {
-                            append("$intensity = $description")
+                    key(page, pairs) {
+                        val savedPosition = positionsX[page]?.let { x ->
+                            positionsY[page]?.let { y -> Offset(x, y) }
+                        }
+                        AhpTouchArea(
+                            first = pair.first,
+                            second = pair.second,
+                            savedPosition = savedPosition,
+                            canGoPrevious = page > 0,
+                            canGoNext = page < pairs.lastIndex,
+                            onPrevious = { if (page > 0) page-- },
+                            onNext = { if (page < pairs.lastIndex) page++ }
+                        ) { position ->
+                            val ratio = ahpSelectionAt(position.x, position.y, 1f, 1f).ratio
+                            answers = answers.toMutableList().also { it[page] = ratio }
+                            positionsX = positionsX.toMutableList().also { it[page] = position.x }
+                            positionsY = positionsY.toMutableList().also { it[page] = position.y }
+                            if (page < pairs.lastIndex) page++
                         }
                     }
-                    append(".")
-                })
-                Button(
-                    onClick = {
-                        viewModel.calcularRankingAhp(answers.map { requireNotNull(it) })
-                        navController.navigate("ranking")
-                    },
-                    enabled = answers.all { it != null },
-                    modifier = Modifier.fillMaxWidth()
-                ) { Text("Processar AHP") }
+                    Text(buildAnnotatedString {
+                        append("Escala: ")
+                        listOf(
+                            1 to "igual", 3 to "moderada", 5 to "forte",
+                            7 to "muito forte", 9 to "extrema"
+                        ).forEachIndexed { index, (intensity, description) ->
+                            if (index > 0) append("; ")
+                            withStyle(SpanStyle(color = ahpIntensityColor(intensity))) {
+                                append("$intensity = $description")
+                            }
+                        }
+                        append(".")
+                    })
+
+                }
+
             }
+
+            Button(
+                onClick = {
+                    viewModel.calcularRankingAhp(answers.map { requireNotNull(it) })
+                    navController.navigate("ranking")
+                },
+                enabled = pairs.isNotEmpty() && answers.all { it != null },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(8.dp)
+            ) { Text("Processar", modifier = Modifier.padding(vertical = 8.dp)) }
         }
     }
 }
@@ -163,10 +174,13 @@ internal fun AhpTouchArea(
 
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            TextButton(onClick = onPrevious, enabled = canGoPrevious) { Text("Anterior") }
+            TextButton(
+                onClick = onPrevious,
+                enabled = canGoPrevious,
+                modifier = Modifier.weight(1f)
+            ) { Text("Anterior") }
             Text(
                 text = when (selection?.side) {
                     -1 -> first
@@ -179,7 +193,11 @@ internal fun AhpTouchArea(
                 textAlign = TextAlign.Center,
                 style = MaterialTheme.typography.titleMedium
             )
-            TextButton(onClick = onNext, enabled = canGoNext) { Text("Próxima") }
+            TextButton(
+                onClick = onNext,
+                enabled = canGoNext,
+                modifier = Modifier.weight(1f)
+            ) { Text("Próxima") }
         }
 
         Text(
