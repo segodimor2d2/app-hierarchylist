@@ -156,60 +156,114 @@ fun EditScreen(navController: NavController, viewModel: SharedViewModel) {
                             cursorColor = MaterialTheme.colorScheme.primary
                         )
                     )
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
 
+                    Button(
+                        onClick = {
+                            message = saveFileContent(context, fileUri, fileContent)
+                        },
 
-                    Row(
-                        modifier = Modifier.fillMaxWidth().selectableGroup(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(8.dp),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline), // opcional (padrão do Material 3)
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = MaterialTheme.colorScheme.primary // cor do texto/ícone
+                        ),
                     ) {
-                        listOf("mbc", "ahp").forEach { metodo ->
-                            val isSelected = varMetodo == metodo
-                            Row(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .selectable(
-                                        selected = isSelected,
-                                        onClick = { viewModel.selecionarMetodo(metodo) },
-                                        role = Role.RadioButton
-                                    )
-                                    .heightIn(min = 48.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                RadioButton(
-                                    selected = isSelected,
-                                    onClick = null
-                                )
-                                Spacer(Modifier.width(8.dp))
-                                Text(metodo.uppercase())
-                            }
-                        }
-                        IconButton(
-                            onClick = { showMethodHelp = true },
-                            modifier = Modifier.semantics {
-                                contentDescription = "Explicação dos métodos MBC e AHP"
-                            }
-                        ) {
-                            Text("?", style = MaterialTheme.typography.titleLarge)
-                        }
+                        Text(
+                            text = "Salvar Alterações",
+                            style = MaterialTheme.typography.titleMedium,
+                            modifier = Modifier.padding(vertical = 8.dp)
+                        )
                     }
 
-                    // Aqui passamos as variáveis necessárias
-                    EditButtons(
-                        context = context,
-                        fileUri = fileUri,
-                        fileContent = fileContent,
-                        onSave = { message = it },
-                        viewModel = viewModel,
-                        navController = navController
-                    )
-                }
+
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 24.dp)
+                    ) {
+
+                        Text(
+                            text = "Compare List",
+                            style = MaterialTheme.typography.titleLarge,
+                        )
+
+                    }
+
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth().selectableGroup(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            listOf("ahp", "mbc").forEach { metodo ->
+                                val isSelected = varMetodo == metodo
+                                Row(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .selectable(
+                                            selected = isSelected,
+                                            onClick = { viewModel.selecionarMetodo(metodo) },
+                                            role = Role.RadioButton
+                                        )
+                                        .heightIn(min = 48.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    RadioButton(
+                                        selected = isSelected,
+                                        onClick = null
+                                    )
+                                    Spacer(Modifier.width(8.dp))
+                                    Text(metodo.uppercase())
+                                }
+                            }
+                            IconButton(
+                                onClick = { showMethodHelp = true },
+                                modifier = Modifier.semantics {
+                                    contentDescription = "Explicação dos métodos AHP e MBC"
+                                }
+                            ) {
+                                Text("?", style = MaterialTheme.typography.titleLarge)
+                            }
+                        }
+
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+
+
+                            Button(
+                                onClick = {
+                                    message = saveFileContent(context, fileUri, fileContent)
+                                    viewModel.processData(fileContent)
+                                    navController.navigate(if (viewModel.varMetodo == "ahp") "compare_ahp" else "compare")
+                                },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.primary,
+                                    contentColor = MaterialTheme.colorScheme.onPrimary
+                                ),
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(8.dp),
+                            ) {
+                                Text(
+                                    text = "Comparar - ${viewModel.varMetodo.uppercase()}",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    modifier = Modifier.padding(vertical = 8.dp)
+                                )
+                            }
+
+
+                        }
+
+                    }
                 }
             }
         }
@@ -245,61 +299,3 @@ private fun saveFileContent(context: Context, fileUri: Uri?, content: String): S
     }
 }
 
-@Composable
-fun EditButtons(
-    context: Context,
-    fileUri: Uri?,
-    fileContent: String,
-    onSave: (String) -> Unit,
-    viewModel: SharedViewModel,
-    navController: NavController
-) {
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        // Botão Comparar
-        Button(
-            onClick = {
-                val result = saveFileContent(context, fileUri, fileContent)
-                onSave(result)
-                viewModel.processData(fileContent)
-                navController.navigate(if (viewModel.varMetodo == "ahp") "compare_ahp" else "compare")
-            },
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary
-            ),
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(8.dp),
-        ) {
-            Text(
-                text = "Comparar - ${viewModel.varMetodo.uppercase()}",
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(vertical = 8.dp)
-            )
-        }
-
-        //Spacer(modifier = Modifier.height(8.dp))
-
-        // Botão Salvar Alterações
-        Button(
-            onClick = {
-                val result = saveFileContent(context, fileUri, fileContent)
-                onSave(result)
-            },
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(8.dp),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline), // opcional (padrão do Material 3)
-            colors = ButtonDefaults.outlinedButtonColors(
-                contentColor = MaterialTheme.colorScheme.primary // cor do texto/ícone
-            ),
-        ) {
-            Text(
-                text = "Salvar Alterações",
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(vertical = 8.dp)
-            )
-        }
-    }
-}

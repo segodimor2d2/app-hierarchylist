@@ -132,6 +132,18 @@ internal fun MbcTouchArea(
     val selection = position?.let { mbcAnswerAt(it, 1f) }
     val selectionColor = MaterialTheme.colorScheme.primary
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            text = when (selection) {
+                -1 -> first
+                0 -> "Igualmente importantes"
+                1 -> second
+                else -> "Toque ou deslize para escolher"
+            },
+            modifier = Modifier.fillMaxWidth(),
+            textAlign = TextAlign.Center,
+            style = MaterialTheme.typography.titleMedium,
+            color = selectionColor
+        )
         Box(
             modifier = Modifier.fillMaxWidth().height(160.dp)
                 .clip(RoundedCornerShape(8.dp))
@@ -190,18 +202,6 @@ internal fun MbcTouchArea(
                 }
             }
         }
-        Text(
-            text = when (selection) {
-                -1 -> first
-                0 -> "Igualmente importantes"
-                1 -> second
-                else -> "Toque ou deslize para escolher"
-            },
-            modifier = Modifier.fillMaxWidth(),
-            textAlign = TextAlign.Center,
-            style = MaterialTheme.typography.titleMedium,
-            color = selectionColor
-        )
     }
 }
 

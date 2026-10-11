@@ -19,11 +19,11 @@ data class ItemPair(val first: String, val second: String)
 class SharedViewModel : ViewModel() {
 
     // Método escolhido na tela de edição: "mbc" ou "ahp".
-    var varMetodo by mutableStateOf("mbc")
+    var varMetodo by mutableStateOf("ahp")
         private set
 
     fun selecionarMetodo(metodo: String) {
-        require(metodo == "mbc" || metodo == "ahp")
+        require(metodo == "mbc" || metodo == "mbc")
         varMetodo = metodo
     }
 

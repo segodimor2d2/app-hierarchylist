@@ -125,6 +125,33 @@ internal fun AhpTouchArea(
     val markerColor = selectionColor.copy(alpha = 0.5f)
     val markerOutline = selectionColor.copy(alpha = 0.65f)
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            text = when (selection?.side) {
+                -1 -> first
+                0 -> "Igualmente importantes"
+                1 -> second
+                else -> "Toque ou deslize para escolher"
+            },
+            modifier = Modifier.fillMaxWidth(),
+            color = selectionColor,
+            textAlign = TextAlign.Center,
+            style = MaterialTheme.typography.titleMedium
+        )
+        Text(
+            text = selection?.let {
+                val description = when (it.intensity) {
+                    1 -> "igual"
+                    3 -> "moderada"
+                    5 -> "forte"
+                    7 -> "muito forte"
+                    else -> "extrema"
+                }
+                "Intensidade: ${it.intensity} — $description"
+            } ?: "Intensidade: deslize de baixo (1) para cima (9)",
+            modifier = Modifier.fillMaxWidth(),
+            color = selectionColor,
+            textAlign = TextAlign.Center
+        )
         Box(
             modifier = Modifier.fillMaxWidth().aspectRatio(1f)
                 .clip(RoundedCornerShape(8.dp))
@@ -192,32 +219,5 @@ internal fun AhpTouchArea(
                 }
             }
         }
-        Text(
-            text = when (selection?.side) {
-                -1 -> first
-                0 -> "Igualmente importantes"
-                1 -> second
-                else -> "Toque ou deslize para escolher"
-            },
-            modifier = Modifier.fillMaxWidth(),
-            color = selectionColor,
-            textAlign = TextAlign.Center,
-            style = MaterialTheme.typography.titleMedium
-        )
-        Text(
-            text = selection?.let {
-                val description = when (it.intensity) {
-                    1 -> "igual"
-                    3 -> "moderada"
-                    5 -> "forte"
-                    7 -> "muito forte"
-                    else -> "extrema"
-                }
-                "Intensidade: ${it.intensity} — $description"
-            } ?: "Intensidade: deslize de baixo (1) para cima (9)",
-            modifier = Modifier.fillMaxWidth(),
-            color = selectionColor,
-            textAlign = TextAlign.Center
-        )
     }
 }
