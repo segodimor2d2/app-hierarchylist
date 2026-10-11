@@ -5,12 +5,12 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class MbcTouchAreaTest {
-    @Test fun positionSelectsTheCorrespondingThird() {
+    @Test fun positionUsesFortyTwentyFortyZones() {
         assertEquals(-1, mbcAnswerAt(0f, 300f))
-        assertEquals(-1, mbcAnswerAt(99f, 300f))
-        assertEquals(0, mbcAnswerAt(100f, 300f))
-        assertEquals(0, mbcAnswerAt(199f, 300f))
-        assertEquals(1, mbcAnswerAt(200f, 300f))
+        assertEquals(-1, mbcAnswerAt(119f, 300f))
+        assertEquals(0, mbcAnswerAt(120f, 300f))
+        assertEquals(0, mbcAnswerAt(179f, 300f))
+        assertEquals(1, mbcAnswerAt(180f, 300f))
         assertEquals(1, mbcAnswerAt(300f, 300f))
     }
 

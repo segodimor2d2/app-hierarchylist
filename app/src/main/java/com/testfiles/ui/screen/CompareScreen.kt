@@ -1,6 +1,6 @@
 package com.testfiles.ui.screen
 
-import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.awaitEachGesture
@@ -17,6 +17,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.customActions
@@ -32,6 +34,9 @@ fun CompareScreen(navController: NavController, viewModel: SharedViewModel) {
     val itemPairs by viewModel.itemPairs.collectAsState()
     var respostas by rememberSaveable(itemPairs) {
         mutableStateOf(List<Int?>(itemPairs.size) { null })
+    }
+    var positionsX by rememberSaveable(itemPairs) {
+        mutableStateOf(List<Float?>(itemPairs.size) { null })
     }
     val scope = rememberCoroutineScope()
 
@@ -62,6 +67,7 @@ fun CompareScreen(navController: NavController, viewModel: SharedViewModel) {
                             OutlinedButton(
                                 onClick = {
                                     respostas = respostas.toMutableList().also { it[page] = value }
+                                    positionsX = positionsX.toMutableList().also { it[page] = if (value == -1) 0.2f else 0.8f }
                                 },
                                 modifier = Modifier.fillMaxWidth(),
                                 colors = ButtonDefaults.outlinedButtonColors(
@@ -74,10 +80,11 @@ fun CompareScreen(navController: NavController, viewModel: SharedViewModel) {
                         MbcTouchArea(
                             first = pair.first,
                             second = pair.second,
-                            savedAnswer = respostas[page],
+                            savedPosition = positionsX[page],
                             enabled = !pagerState.isScrollInProgress,
-                            onAnswer = { answer ->
-                                respostas = respostas.toMutableList().also { it[page] = answer }
+                            onAnswer = { position ->
+                                positionsX = positionsX.toMutableList().also { it[page] = position }
+                                respostas = respostas.toMutableList().also { it[page] = mbcAnswerAt(position, 1f) }
                                 if (page < itemPairs.lastIndex) {
                                     scope.launch { pagerState.animateScrollToPage(page + 1) }
                                 }
@@ -113,23 +120,26 @@ fun CompareScreen(navController: NavController, viewModel: SharedViewModel) {
 internal fun MbcTouchArea(
     first: String,
     second: String,
-    savedAnswer: Int?,
+    savedPosition: Float?,
     enabled: Boolean = true,
-    onAnswer: (Int) -> Unit
+    onAnswer: (Float) -> Unit
 ) {
-    var preview by remember(first, second) { mutableStateOf<Int?>(null) }
+    var preview by remember(first, second) { mutableStateOf<Float?>(null) }
     val answerCallback by rememberUpdatedState(onAnswer)
     val labels = listOf(first, "Igualmente importantes", second)
-    val values = listOf(-1, 0, 1)
-    val highlighted = preview ?: savedAnswer
+    val positions = listOf(0.2f, 0.5f, 0.8f)
+    val position = preview ?: savedPosition
+    val selection = position?.let { mbcAnswerAt(it, 1f) }
+    val selectionColor = MaterialTheme.colorScheme.primary
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Row(
+        Box(
             modifier = Modifier.fillMaxWidth().height(160.dp)
                 .clip(RoundedCornerShape(8.dp))
-                .border(BorderStroke(1.dp, MaterialTheme.colorScheme.outline), RoundedCornerShape(8.dp))
+                .background(MaterialTheme.colorScheme.surfaceVariant)
+                .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp))
                 .semantics {
                     customActions = if (enabled) labels.mapIndexed { index, label ->
-                        CustomAccessibilityAction(label) { answerCallback(values[index]); true }
+                        CustomAccessibilityAction(label) { answerCallback(positions[index]); true }
                     } else emptyList()
                 }
                 .pointerInput(first, second, enabled) {
@@ -137,12 +147,12 @@ internal fun MbcTouchArea(
                     awaitEachGesture {
                         val down = awaitFirstDown()
                         down.consume()
-                        preview = mbcAnswerAt(down.position.x, size.width.toFloat())
+                        preview = (down.position.x / size.width).coerceIn(0f, 1f)
                         try {
                             while (true) {
                                 val event = awaitPointerEvent()
                                 val touch = event.changes.firstOrNull { it.id == down.id } ?: break
-                                preview = mbcAnswerAt(touch.position.x, size.width.toFloat())
+                                preview = (touch.position.x / size.width).coerceIn(0f, 1f)
                                 touch.consume()
                                 if (!touch.pressed) {
                                     if (touch.previousPressed) answerCallback(requireNotNull(preview))
@@ -155,20 +165,33 @@ internal fun MbcTouchArea(
                     }
                 }
         ) {
-            labels.forEachIndexed { index, label ->
-                val isHighlighted = highlighted == values[index]
-                Box(
-                    modifier = Modifier.weight(1f).fillMaxHeight()
-                        .background(if (isHighlighted) MaterialTheme.colorScheme.primaryContainer
-                            else MaterialTheme.colorScheme.surfaceVariant)
-                        .border(0.5.dp, MaterialTheme.colorScheme.outline)
-                        .padding(8.dp),
-                    contentAlignment = Alignment.Center
-                ) { Text(label, textAlign = TextAlign.Center) }
+            Row(
+                modifier = Modifier.fillMaxWidth().align(Alignment.Center),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                listOf(first to 0.4f, "=" to 0.2f, second to 0.4f).forEach { (label, weight) ->
+                    Text(
+                        label,
+                        modifier = Modifier.weight(weight).padding(8.dp),
+                        textAlign = TextAlign.Center,
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                }
+            }
+            Canvas(modifier = Modifier.matchParentSize()) {
+                position?.let {
+                    val radius = 9.dp.toPx().coerceAtMost(size.minDimension / 2)
+                    val center = Offset(
+                        (it * size.width).coerceIn(radius, size.width - radius),
+                        size.height / 2
+                    )
+                    drawCircle(selectionColor.copy(alpha = 0.5f), radius, center)
+                    drawCircle(selectionColor.copy(alpha = 0.65f), radius, center, style = Stroke(2.dp.toPx()))
+                }
             }
         }
         Text(
-            text = when (highlighted) {
+            text = when (selection) {
                 -1 -> first
                 0 -> "Igualmente importantes"
                 1 -> second
@@ -176,7 +199,8 @@ internal fun MbcTouchArea(
             },
             modifier = Modifier.fillMaxWidth(),
             textAlign = TextAlign.Center,
-            style = MaterialTheme.typography.titleMedium
+            style = MaterialTheme.typography.titleMedium,
+            color = selectionColor
         )
     }
 }
@@ -184,8 +208,8 @@ internal fun MbcTouchArea(
 internal fun mbcAnswerAt(x: Float, width: Float): Int {
     require(width > 0)
     return when {
-        x < width / 3f -> -1
-        x < width * 2f / 3f -> 0
+        x < width * 0.4f -> -1
+        x < width * 0.6f -> 0
         else -> 1
     }
 }

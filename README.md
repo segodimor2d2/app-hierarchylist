@@ -923,6 +923,13 @@ na tela AHP para cada slide muder:
 o tamnaho da area do = na horizonta pode ser de 20% os outros dois seriam de 40%
 mude a cor da bolinha dependendo da altura por cada nivel de 1-9, 1 começa  verde e 9 termina em vermelho
 de cores transparentes a bolinha sempre,
+me confirma se vc entedeu
+
+
+na tela MBC vamos aplicar as mesmas mudanças na area touch que na tela AHP
+a parte que muda é a que nao tem eixo Y na vertical entao a bolinha so teria uma cor
+a area continua retangular 
+me confirma se vc entedeu
 
 ---
 $$$$
