@@ -51,11 +51,21 @@ fun CompareAhpScreen(navController: NavController, viewModel: SharedViewModel) {
                 Text("${page + 1} de ${pairs.size} • ${answers.count { it != null }} respondidas")
                 Text("Qual item é mais importante?", style = MaterialTheme.typography.titleMedium)
                 Text("Deslize para escolher o item e a intensidade. Ao soltar, a resposta será salva e a próxima pergunta será exibida.")
+
+
                 key(page, pairs) {
                     val savedPosition = positionsX[page]?.let { x ->
                         positionsY[page]?.let { y -> Offset(x, y) }
                     }
-                    AhpTouchArea(pair.first, pair.second, savedPosition) { position ->
+                    AhpTouchArea(
+                        first = pair.first,
+                        second = pair.second,
+                        savedPosition = savedPosition,
+                        canGoPrevious = page > 0,
+                        canGoNext = page < pairs.lastIndex,
+                        onPrevious = { if (page > 0) page-- },
+                        onNext = { if (page < pairs.lastIndex) page++ }
+                    ) { position ->
                         val ratio = ahpSelectionAt(position.x, position.y, 1f, 1f).ratio
                         answers = answers.toMutableList().also { it[page] = ratio }
                         positionsX = positionsX.toMutableList().also { it[page] = position.x }
@@ -64,10 +74,6 @@ fun CompareAhpScreen(navController: NavController, viewModel: SharedViewModel) {
                     }
                 }
                 Text("Escala: 1 = igual; 3 = moderada; 5 = forte; 7 = muito forte; 9 = extrema.")
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    TextButton(onClick = { page-- }, enabled = page > 0) { Text("Anterior") }
-                    TextButton(onClick = { page++ }, enabled = page < pairs.lastIndex) { Text("Próxima") }
-                }
                 Button(
                     onClick = {
                         viewModel.calcularRankingAhp(answers.map { requireNotNull(it) })
@@ -105,6 +111,10 @@ internal fun AhpTouchArea(
     first: String,
     second: String,
     savedPosition: Offset?,
+    canGoPrevious: Boolean,
+    canGoNext: Boolean,
+    onPrevious: () -> Unit,
+    onNext: () -> Unit,
     onAnswer: (Offset) -> Unit
 ) {
     var previewPosition by remember { mutableStateOf<Offset?>(null) }
@@ -124,24 +134,36 @@ internal fun AhpTouchArea(
     }
     val markerColor = selectionColor.copy(alpha = 0.5f)
     val markerOutline = selectionColor.copy(alpha = 0.65f)
-    val labelCenters = listOf(Offset(0.2f, 0.5f), Offset(0.5f, 0.5f), Offset(0.8f, 0.5f))
-    val nearbyLabel = position?.let { point ->
-        labelCenters.indices.minByOrNull { (point - labelCenters[it]).getDistance() }
-            ?.takeIf { (point - labelCenters[it]).getDistance() <= 0.22f }
+    val activeLabel = selection?.let {
+        when (it.side) {
+            -1 -> 0
+            0 -> 1
+            else -> 2
+        }
     }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(
-            text = when (selection?.side) {
-                -1 -> first
-                0 -> "Igualmente importantes"
-                1 -> second
-                else -> "Toque ou deslize para escolher"
-            },
+
+        Row(
             modifier = Modifier.fillMaxWidth(),
-            color = selectionColor,
-            textAlign = TextAlign.Center,
-            style = MaterialTheme.typography.titleMedium
-        )
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            TextButton(onClick = onPrevious, enabled = canGoPrevious) { Text("Anterior") }
+            Text(
+                text = when (selection?.side) {
+                    -1 -> first
+                    0 -> "Igualmente importantes"
+                    1 -> second
+                    else -> "Toque ou deslize para escolher"
+                },
+                modifier = Modifier.weight(1f),
+                color = selectionColor,
+                textAlign = TextAlign.Center,
+                style = MaterialTheme.typography.titleMedium
+            )
+            TextButton(onClick = onNext, enabled = canGoNext) { Text("Próxima") }
+        }
+
         Text(
             text = selection?.let {
                 val description = when (it.intensity) {
@@ -209,7 +231,7 @@ internal fun AhpTouchArea(
                         label,
                         modifier = Modifier.weight(weight).padding(8.dp),
                         textAlign = TextAlign.Center,
-                        color = if (index == nearbyLabel) selectionColor else Color.White,
+                        color = if (index == activeLabel) markerColor else Color.White,
                         style = MaterialTheme.typography.titleMedium
                     )
                 }
