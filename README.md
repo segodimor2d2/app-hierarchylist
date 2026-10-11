@@ -863,17 +863,16 @@ eu quero duplicar ui/screen/CompareScreen.kt para ao escolher MBC ou AHP e eu po
 ---
 $$$$
 
-para cada slide se perguntas,
-eu quero criar uma area cuadrada touch,
-a area horizontal pode ser dividida em 3 partes,
+para cada slide de perguntas,
+eu quero criar uma area retangular que reconhece o touch,
+a area horizontal vai ser dividida em 3 partes,
 a ezquerda será a opçao A,
-no meio seria igualmente importantes
+no meio seria igualmente importantes,
 a direita será a opçao B,
 ao deslizar na area,
-um texto embaixo da area vai mostrar a que posiçao corresponde o lugar
-onde estou deslizando o dedo na area,
+um texto embaixo da area vai mostrar a que posiçao corresponde o lugar onde estou deslizando o dedo na area,
 se eu soltar o dedo da area, o valor vai ser salvo na resposta
-e vai pulata pro proximo slidm
+e vai pulata pro proximo slide.
 
 seja alterado
 
